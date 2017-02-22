@@ -22,4 +22,9 @@ public class Dataset {
 	public void add(Instance inst) {
 		instances.add(inst);
 	}
+
+     // Return the list of images.
+     public List<Instance> getImages() {
+            return instances;
+     }
 }

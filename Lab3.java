@@ -50,10 +50,10 @@ public class Lab3 {
             System.err.println("Usage error: java Lab3 <train_set_folder_path> <tune_set_folder_path> <test_set_foler_path> <imageSize>");
             System.exit(1);
         }
-        if (args.length > 1) { trainDirectory = args[1]; }
-        if (args.length > 2) {  tuneDirectory = args[2]; }
-        if (args.length > 3) {  testDirectory = args[3]; }
-        if (args.length > 4) {  imageSize     = Integer.parseInt(args[4]); }
+        if (args.length >= 1) { trainDirectory = args[0]; }
+        if (args.length >= 2) {  tuneDirectory = args[1]; }
+        if (args.length >= 3) {  testDirectory = args[2]; }
+        if (args.length >= 4) {  imageSize     = Integer.parseInt(args[3]); }
     
 		// Here are statements with the absolute path to open images folder
         File trainsetDir = new File(trainDirectory);
@@ -90,7 +90,7 @@ public class Lab3 {
 	public static void loadDataset(Dataset dataset, File dir) {
         for(File file : dir.listFiles()) {
             // check all files
-            if(!file.isFile() || file.getName().endsWith(".DS_Store")) {
+             if(!file.isFile() || !file.getName().endsWith(".jpg")) {
                 continue;
             }
             //String path = file.getAbsolutePath();
