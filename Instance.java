@@ -3,9 +3,8 @@
  * This is the class for each image instance
  */
 
-import java.awt.Image;
-import java.awt.image.BufferedImage;
 import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 
 public class Instance {
@@ -33,7 +32,7 @@ public class Instance {
 		
 		for(int row = 0; row < height; ++row) {
 			for(int col = 0; col < width; ++col) {
-				Color c = new Color(image.getRGB(col, row));
+				Color c = new Color(this.image.getRGB(col, row));
 				red_channel[row][col] = c.getRed();
 				green_channel[row][col] = c.getGreen();
 				blue_channel[row][col] = c.getBlue();
