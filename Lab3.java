@@ -46,7 +46,7 @@ public class Lab3 {
 
 	// Should be one of { "perceptrons", "oneLayer", "deep" }; You might want to use this if you are trying approaches
 	// other than a Deep ANN.
-	private static String modelToUse = "oneLayer";
+	private static String modelToUse = "deep";
 
 	// The provided code uses a 1D vector of input features. You might want to create a 2D version for your Depp ANN
 	// code. Or use the get2DfeatureValue() 'accessor function' that maps 2D coordinates into the 1D vector. The last
@@ -57,11 +57,13 @@ public class Lab3 {
 	private static double eta = 0.1, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
-	private static int maxEpochs = 100;
+	private static int maxEpochs = 2000;
 	
 	private static int MAX_INSTANCES = 30;
 	private static boolean FAST = false;
 
+	public static Dataset trainSet, tuneSet, testSet;
+	
 	public static void main(String[] args) {
 		String trainDirectory = "images/trainset/";
 		String tuneDirectory = "images/tuneset/";
@@ -73,13 +75,13 @@ public class Lab3 {
 			System.exit(1);
 		}
 		if (args.length >= 1) {
-//			trainDirectory = args[0];
+			trainDirectory = args[0];
 		}
 		if (args.length >= 2) {
-//			tuneDirectory = args[1];
+			tuneDirectory = args[1];
 		}
 		if (args.length >= 3) {
-//			testDirectory = args[2];
+			testDirectory = args[2];
 		}
 		if (args.length >= 4) {
 //			imageSize = Integer.parseInt(args[3]);
@@ -95,6 +97,9 @@ public class Lab3 {
 		Dataset trainset = new Dataset();
 		Dataset tuneset = new Dataset();
 		Dataset testset = new Dataset();
+		trainSet = trainset;
+		tuneSet = tuneset;
+		testSet = testset;
 
 		// Load in images into datasets.
 		long start = System.currentTimeMillis();
@@ -503,7 +508,7 @@ public class Lab3 {
 	// checked and/or printed
 	// (which does slow down the
 	// code).
-	private static int NUM_HIDDEN = 150;
+	private static int NUM_HIDDEN = 250;
 
 	private static final double LEARNING_RATE = .0005;
 	private static final double MOMENTUM_RATE = 0.75;
@@ -569,19 +574,45 @@ public class Lab3 {
 	//////////////////////////////////////////////////////////////////////////////////////////////// DEEP
 	//////////////////////////////////////////////////////////////////////////////////////////////// ANN
 	//////////////////////////////////////////////////////////////////////////////////////////////// Code
-
+	
+	private static final int NUM_PLATES = 20;
+	private static final int NUM_HIDDEN_DEEP = 250;
+	
 	private static int trainDeep(Vector<Vector<Double>> trainFeatureVectors, Vector<Vector<Double>> tuneFeatureVectors,
 			Vector<Vector<Double>> testFeatureVectors) {
 		// You need to implement this method!
+//		String[] config = new String[] {
+//				"inpu ",
+//				"conv 5",
+//				"pool 2",
+//				"conv 5",
+//				"pool 2",
+//				"conv 3",
+//				"hidd " + NUM_HIDDEN_DEEP,
+//				"outp "
+//		};
+		String[] config = new String[] {
+				"inpu ",
+				"hidd " + NUM_HIDDEN_DEEP,
+				"outp "
+		};
+		DeepNeuralNetwork dnn = new DeepNeuralNetwork(config, NUM_PLATES, imageSize, unitsPerPixel, NUM_CATEGORIES);
+		dnn.setInput(trainSet.getImages().get(0));
+		dnn.computeOutput();
+		OutputLayer out = (OutputLayer) dnn.layers[dnn.layers.length - 1];
+		for (int i = 0; i < out.nodes.size(); i++) {
+			System.out.println(out.nodes.get(i).getOutput());
+		}
 		return -1;
 	}
 	
+	public static final double INITIAL_WEIGHT = 0.001;
 	// Gets weights randomly
-	public static void randomizeWeights(double[][] weights, double weight) {
+	public static void randomizeWeights(double[][] weights) {
 		Random r = new Random();
 		for (int i = 0; i < weights.length; i++) {
 			for (int j = 0; j < weights[i].length; j++) {
-				weights[i][j] = r.nextDouble() * weight;
+				weights[i][j] = r.nextDouble() * INITIAL_WEIGHT;
 			}
 		}
 	}

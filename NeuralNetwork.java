@@ -33,8 +33,8 @@ public class NeuralNetwork {
 		// Reading the weights
 		weightsIJ = new double[numInputs + 1][numHiddens];
 		weightsJK = new double[numHiddens + 1][numOutputs];
-		Lab3.randomizeWeights(weightsIJ, WEIGHT);
-		Lab3.randomizeWeights(weightsJK, WEIGHT);
+		Lab3.randomizeWeights(weightsIJ);
+		Lab3.randomizeWeights(weightsJK);
 		System.out
 				.println("Input nodes: " + numInputs + "\nHidden nodes: " + numHiddens + "\nOutput nodes: " + numOutputs);
 		// input layer nodes
@@ -107,11 +107,11 @@ public class NeuralNetwork {
 			inputNodes.get(i).setInput(inst.get(i));
 		}
 		for (int i = 0; i < hiddenNodes.size() - 1; i++) {
-			hiddenNodes.get(i).calculateOutput();
+			hiddenNodes.get(i).computeOutput();
 		}
 
 		for (int i = 0; i < outputNodes.size(); i++) {
-			outputNodes.get(i).calculateOutput();
+			outputNodes.get(i).computeOutput();
 		}
 
 //		if (verbose && Math.random() > 1) {

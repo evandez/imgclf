@@ -51,7 +51,7 @@ public class Node {
 	 * @param train:
 	 *           the training set
 	 */
-	public double calculateOutput() {
+	public double computeOutput() {
 		if (type == 2 || type == 4) {
 			sum = 0.0;
 			// boolean pos = true;
