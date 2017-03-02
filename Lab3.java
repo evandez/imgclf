@@ -1,16 +1,15 @@
-
 /**
- * @Author: Yuting Liu and Jude Shavlik.  
- * 
+ * @Author: Yuting Liu and Jude Shavlik.
+ *
  * Copyright 2017.  Free for educational and basic-research use.
- * 
+ *
  * The main class for Lab3 of cs638/838.
- * 
+ *
  * Reads in the image files and stores BufferedImage's for every example.  Converts to fixed-length
  * feature vectors (of doubles).  Can use RGB (plus grey-scale) or use grey scale.
- * 
+ *
  * You might want to debug and experiment with your Deep ANN code using a separate class, but when you turn in Lab3.java, insert that class here to simplify grading.
- * 
+ *
  * Some snippets from Jude's code left in here - feel free to use or discard.
  *
  */
@@ -29,34 +28,39 @@ public class Lab3 {
 	// Images are imageSize x imageSize. The provided data is 128x128, but this can be resized by setting this value (or
 	// passing in an argument). You might want to resize to 8x8, 16x16, 32x32, or 64x64; this can reduce your network
 	// size and speed up debugging runs. ALL IMAGES IN A TRAINING RUN SHOULD BE THE *SAME* SIZE.
-	private static int imageSize = 8;
+	private static int imageSize = 32;
 
 	// We'll hardwire these in, but more robust code would not do so.
 	private static enum Category {
 		airplanes, butterfly, flower, grand_piano, starfish, watch
 	};
 
+	public static int NUM_CATEGORIES = Category.values().length;
+
 	// If true, FOUR units are used per pixel: red, green, blue, and grey.
 	// If false, only ONE (the grey-scale value).
-	private static final Boolean useRGB = false;
+	private static final Boolean useRGB = true;
 
 	// If using RGB, use red+blue+green+grey. Otherwise just use the grey value.
-	private static int unitsPerPixel = (useRGB ? 4 : 1); 
+	private static int unitsPerPixel = (useRGB ? 4 : 1);
 
 	// Should be one of { "perceptrons", "oneLayer", "deep" }; You might want to use this if you are trying approaches
 	// other than a Deep ANN.
-	private static String modelToUse = "deep";
+	private static String modelToUse = "oneLayer";
 
 	// The provided code uses a 1D vector of input features. You might want to create a 2D version for your Depp ANN
 	// code. Or use the get2DfeatureValue() 'accessor function' that maps 2D coordinates into the 1D vector. The last
 	// element in this vector holds the 'teacher-provided' label of the example.
-	private static int inputVectorSize;
+	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
 	private static double eta = 0.1, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
-	
+
 	// Feel free to set to a different value.
-	private static int maxEpochs = 1000; 
+	private static int maxEpochs = 100;
+	
+	private static int MAX_INSTANCES = 30;
+	private static boolean FAST = false;
 
 	public static void main(String[] args) {
 		String trainDirectory = "images/trainset/";
@@ -69,16 +73,16 @@ public class Lab3 {
 			System.exit(1);
 		}
 		if (args.length >= 1) {
-			trainDirectory = args[0];
+//			trainDirectory = args[0];
 		}
 		if (args.length >= 2) {
-			tuneDirectory = args[1];
+//			tuneDirectory = args[1];
 		}
 		if (args.length >= 3) {
-			testDirectory = args[2];
+//			testDirectory = args[2];
 		}
 		if (args.length >= 4) {
-			imageSize = Integer.parseInt(args[3]);
+//			imageSize = Integer.parseInt(args[3]);
 		}
 
 		// Here are statements with the absolute path to open images folder
@@ -112,6 +116,7 @@ public class Lab3 {
 		// even try your perceptron code. We are providing code that converts images to feature vectors. Feel free to
 		// discard or modify.
 		start = System.currentTimeMillis();
+
 		trainANN(trainset, tuneset, testset);
 		System.out.println("\nTook " + convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + " to train.");
 
@@ -145,7 +150,13 @@ public class Lab3 {
 				Instance instance = new Instance(scaledBI == null ? img : scaledBI,
 						name.substring(0, locationOfUnderscoreImage));
 
-				dataset.add(instance);
+				if (!FAST || (Math.random() > .80) && MAX_INSTANCES > dataset.getSize()) {
+					dataset.add(instance);
+				}
+				
+				if (dataset.getSize() > MAX_INSTANCES && FAST) {
+					return;
+				}
 			} catch (IOException e) {
 				System.err.println("Error: cannot load in the image file");
 				System.exit(1);
@@ -172,7 +183,7 @@ public class Lab3 {
 	}
 
 	private static double getRandomWeight(int fanin, int fanout) {
-		// This is one 'urle of thumb' for initializing weights. Fine for perceptrons and one-layer ANN at least.
+		// This is one 'rule of thumb' for initializing weights. Fine for perceptrons and one-layer ANN at least.
 		double range = Math.max(Double.MIN_VALUE, 4.0 / Math.sqrt(6.0 * (fanin + fanout)));
 		return (2.0 * random() - 1.0) * range;
 	}
@@ -189,9 +200,7 @@ public class Lab3 {
 
 	// Return the count of TESTSET errors for the chosen model.
 	private static int trainANN(Dataset trainset, Dataset tuneset, Dataset testset) {
-		Instance sampleImage = trainset.getImages().get(0); // Assume there is
-		// at least one
-		// train image!
+		Instance sampleImage = trainset.getImages().get(0); // Assume there is at least one train image!
 		inputVectorSize = sampleImage.getWidth() * sampleImage.getHeight() * unitsPerPixel + 1;
 		// The '-1' for the bias is not explicitly added to all examples (instead code should implicitly handle it). The
 		// final 1 is for the CATEGORY.
@@ -239,6 +248,7 @@ public class Lab3 {
 		return -1;
 	}
 
+	// fill feature vectors with images from a dataset
 	private static void fillFeatureVectors(Vector<Vector<Double>> featureVectors, Dataset dataset) {
 		for (Instance image : dataset.getImages()) {
 			featureVectors.addElement(convertToFeatureVector(image));
@@ -246,32 +256,33 @@ public class Lab3 {
 	}
 
 	private static Vector<Double> convertToFeatureVector(Instance image) {
-		Vector<Double> result = new Vector<Double>(inputVectorSize);
-
+		Vector<Double> result = new Vector<>(inputVectorSize);
+		int[][] gray = image.getGrayImage();
+		int width = image.getWidth();
 		for (int index = 0; index < inputVectorSize - 1; index++) {
 			// Need to subtract 1 since the last item is the CATEGORY.
 			if (useRGB) {
-				int xValue = (index / unitsPerPixel) % image.getWidth();
-				int yValue = (index / unitsPerPixel) / image.getWidth();
+				int xValue = (index / unitsPerPixel) % width;
+				int yValue = (index / unitsPerPixel) / width;
 				// System.out.println(" xValue = " + xValue + " and yValue = " + yValue + " for index = " + index);
-				if (index % 3 == 0)
+				if (index % 4 == 0)
 					// if unitsPerPixel > 4, this if-then-elseif needs to be edited!
 					result.add(image.getRedChannel()[xValue][yValue] / 255.0);
-				else if (index % 3 == 1)
+				else if (index % 4 == 1)
 					result.add(image.getGreenChannel()[xValue][yValue] / 255.0);
-				else if (index % 3 == 2)
+				else if (index % 4 == 2)
 					result.add(image.getBlueChannel()[xValue][yValue] / 255.0);
 				else
 					// Seems reasonable to also provide the GREY value.
 					result.add(image.getGrayImage()[xValue][yValue] / 255.0);
 			} else {
-				int xValue = index % image.getWidth();
-				int yValue = index / image.getWidth();
-				result.add(image.getGrayImage()[xValue][yValue] / 255.0);
+				int xValue = index % width;
+				int yValue = index / width;
+				result.add(gray[xValue][yValue] / 255.0);
 			}
 		}
 		result.add((double) convertCategoryStringToEnum(image.getLabel()).ordinal());
-		// The last item is the CATEGORY, represnting as an integer starting at 0 (and that int is then coerced to
+		// The last item is the CATEGORY, representing as an integer starting at 0 (and that int is then coerced to
 		// double).
 
 		return result;
@@ -331,7 +342,7 @@ public class Lab3 {
 
 	/**
 	 * Format the given floating point number by truncating it to the specified number of decimal places.
-	 * 
+	 *
 	 * @param d
 	 *           A number.
 	 * @param decimals
@@ -492,7 +503,11 @@ public class Lab3 {
 	// checked and/or printed
 	// (which does slow down the
 	// code).
-	private static int numberOfHiddenUnits = 250;
+	private static int NUM_HIDDEN = 150;
+
+	private static final double LEARNING_RATE = .0005;
+	private static final double MOMENTUM_RATE = 0.75;
+	private static final double REGULARIZATION_RATE = 0.00001;
 
 	private static int trainOneHU(Vector<Vector<Double>> trainFeatureVectors, Vector<Vector<Double>> tuneFeatureVectors,
 			Vector<Vector<Double>> testFeatureVectors) {
@@ -500,34 +515,41 @@ public class Lab3 {
 		int trainSetErrors = Integer.MAX_VALUE, tuneSetErrors = Integer.MAX_VALUE, best_tuneSetErrors = Integer.MAX_VALUE,
 				testSetErrors = Integer.MAX_VALUE, best_epoch = -1, testSetErrorsAtBestTune = Integer.MAX_VALUE;
 
+		NeuralNetwork nn = new NeuralNetwork(inputVectorSize - 1, NUM_HIDDEN, Category.values().length);
+		NeuralNetwork.setParameters(LEARNING_RATE, MOMENTUM_RATE, REGULARIZATION_RATE);
+		System.out.println(nn.accuracy(testFeatureVectors, false) + " " + nn.accuracy(trainFeatureVectors, false));
 		for (int epoch = 1; epoch <= maxEpochs /* && trainSetErrors > 0 */; epoch++) {
 			// might still want to train after trainset error =0 since we want to get all predictions on the 'right side of
 			// zero' (whereas errors defined wrt HIGHEST output).
 			permute(trainFeatureVectors); // Note: this is an IN-PLACE permute but that is OK.
 
+			for (int i = 0; i < trainFeatureVectors.size(); i++) {
+				nn.updateWeights(trainFeatureVectors.get(i));
+			}
+
 			// CODE NEEDED HERE!
-			System.out.println("Done with Epoch # " + comma(epoch) + ".  Took "
-					+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + " ("
-					+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - overallStart) + " overall).");
-			reportOneLayerConfig(); // Print out some info after epoch, so you can see what experiment is running in a
-											// given console.
+//			System.out.println("Done with Epoch # " + comma(epoch) + ".  Took "
+//					+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + " ("
+//					+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - overallStart) + " overall).");
+//			reportOneLayerConfig(); // Print out some info after epoch, so you can see what experiment is running in a
+//											// given console.
+			System.out.println(nn.accuracy(testFeatureVectors, false) + " " + nn.accuracy(trainFeatureVectors, false));
 			start = System.currentTimeMillis();
 		}
 
-		System.out.println(
-				"\n***** Best tuneset errors = " + comma(best_tuneSetErrors) + " of " + comma(tuneFeatureVectors.size())
-						+ " (" + truncate((100.0 * best_tuneSetErrors) / tuneFeatureVectors.size(), 2) + "%) at epoch = "
-						+ comma(best_epoch) + " (testset errors = " + comma(testSetErrorsAtBestTune) + " of "
-						+ comma(testFeatureVectors.size()) + ", "
-						+ truncate((100.0 * testSetErrorsAtBestTune) / testFeatureVectors.size(), 2) + "%).\n");
+//		System.out.println(
+//				"\n***** Best tuneset errors = " + comma(best_tuneSetErrors) + " of " + comma(tuneFeatureVectors.size())
+//						+ " (" + truncate((100.0 * best_tuneSetErrors) / tuneFeatureVectors.size(), 2) + "%) at epoch = "
+//						+ comma(best_epoch) + " (testset errors = " + comma(testSetErrorsAtBestTune) + " of "
+//						+ comma(testFeatureVectors.size()) + ", "
+//						+ truncate((100.0 * testSetErrorsAtBestTune) / testFeatureVectors.size(), 2) + "%).\n");
 		return testSetErrorsAtBestTune;
 	}
 
 	private static void reportOneLayerConfig() {
 		System.out.println("***** ONE-LAYER: UseRGB = " + useRGB + ", imageSize = " + imageSize + "x" + imageSize
 				+ ", fraction of training examples used = " + truncate(fractionOfTrainingToUse, 2) + ", eta = "
-				+ truncate(eta, 2) + ", dropout rate = " + truncate(dropoutRate, 2) + ", number HUs = "
-				+ numberOfHiddenUnits
+				+ truncate(eta, 2) + ", dropout rate = " + truncate(dropoutRate, 2) + ", number HUs = " + NUM_HIDDEN
 		// + ", activationFunctionForHUs = " + activationFunctionForHUs + ",
 		// activationFunctionForOutputs = " + activationFunctionForOutputs
 		// + ", # forward props = " + comma(forwardPropCounter)
@@ -552,6 +574,16 @@ public class Lab3 {
 			Vector<Vector<Double>> testFeatureVectors) {
 		// You need to implement this method!
 		return -1;
+	}
+	
+	// Gets weights randomly
+	public static void randomizeWeights(double[][] weights, double weight) {
+		Random r = new Random();
+		for (int i = 0; i < weights.length; i++) {
+			for (int j = 0; j < weights[i].length; j++) {
+				weights[i][j] = r.nextDouble() * weight;
+			}
+		}
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////
