@@ -86,11 +86,11 @@ public class Plate {
 	/** Applies the activation function to all values in the plate. */
 	public Plate applyActivation(ActivationFunction func) {
 		checkNotNull(func, "Activation function");
-		double[][][] output = new double[getHeight()][getWidth()][getNumChannels()];
-		for (int i = 0; i < getHeight(); i++) {
-			for (int j = 0; j < getWidth(); j++) {
-				for (int k = 0; k < getNumChannels(); k++) {
-					output[i][j][k] = func.apply(values[i][j][k]);
+		double[][][] output = new double[getNumChannels()][getHeight()][getWidth()];
+		for (int chan = 0; chan < getNumChannels(); chan++) {
+			for (int i = 0; i < getHeight(); i++) {
+				for (int j = 0; j < getWidth(); j++) {
+					output[chan][i][j] = func.apply(values[chan][i][j]);
 				}
 			}
 		}
