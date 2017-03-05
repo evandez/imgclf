@@ -63,7 +63,7 @@ public final class Util {
 							t1[0][0].length,
 							t2.length,
 							t2[0].length,
-							t2[0].length));
+							t2[0][0].length));
 		}
 	}
 	
