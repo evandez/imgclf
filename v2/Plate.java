@@ -129,9 +129,19 @@ public class Plate {
 	}
 	
 	/** Pack this plate into a 1D array, channel by channel, row by row. */
-	public double[] as1DArray(Plate plate) {
-		// TODO: Implement this method.
-		return null;
+	public double[] as1DArray() {
+		double[] result = new double[getNumChannels() * getHeight() * getWidth()];
+		for (int chan = 0; chan < getNumChannels(); chan++) {
+			for (int row = 0; row < getHeight(); row++) {
+				System.arraycopy(
+						values[chan][row],
+						0 /* Copy the whole row! */,
+						result,
+						chan * getHeight() * getWidth() + row * getWidth(),
+						getWidth());
+			}
+		}
+		return result;
 	}
 	
 	@Override
