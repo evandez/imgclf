@@ -79,7 +79,10 @@ public class ConvolutionLayer implements PlateLayer {
 		return builder.toString();
 	}
 	
+	/** Returns a new builder. */
 	public static Builder newBuilder() { return new Builder(); }
+	
+	/** A simple builder pattern for managing the layer's parameters at construction. */
 	public static class Builder {
 		private int convolutionHeight = 0;
 		private int convolutionWidth = 0;
