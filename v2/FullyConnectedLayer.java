@@ -1,5 +1,12 @@
 package v2;
 
+/** 
+ * Your standard fully-connected ANN.
+ * 
+ * This class stores the weights between inputs and nodes, and provides
+ * functionality for computing the output given an input vector and for
+ * backpropagating errors.
+ */
 public class FullyConnectedLayer {
 	private final double[][] weights;
 	private final ActivationFunction activation;
@@ -9,6 +16,7 @@ public class FullyConnectedLayer {
 		this.activation = activation;
 	}
 	
+	/** Compute the output of the given input vector. */
 	public double[] computeOutput(double[] input) {
 		if (input.length != weights[0].length) { // Valid check because we enforce > 0 inputs.
 			throw new IllegalArgumentException(
@@ -26,6 +34,10 @@ public class FullyConnectedLayer {
 		return outputs;
 	}
 
+	/** 
+	 * Given the error from the previous layer, update the weights and return the error
+	 * for this layer.
+	 */
 	public double[] propagateError(double[] error, double learningRate) {
 		// TODO: Implement this method.
 		return null;
@@ -42,14 +54,17 @@ public class FullyConnectedLayer {
 		return builder.toString();
 	}
 	
+	/** Returns a new builder. */
 	public static Builder newBuilder() { return new Builder(); }
+	
+	/** Simple builder pattern for organizing parameters. */
 	public static class Builder {
 		private ActivationFunction func = null;
 		private int numInputs = 0;
 		private int numNodes = 0;
 		
 		private Builder() {}
-		
+
 		public Builder setActivationFunction(ActivationFunction func) {
 			if (func == null) {
 				throw new NullPointerException();

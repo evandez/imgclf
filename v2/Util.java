@@ -3,9 +3,11 @@ package v2;
 import java.util.Collection;
 import java.util.Random;
 
+/** Utility methods and objects used throughout the network. */
 public final class Util {
 	public static final Random RNG = new Random();
 	
+	/** Performs tensor (3D matrix) scalar multiplication. */
 	public static double[][][] scalarMultiply(double scalar, double[][][] tensor) {
 		checkTensorNotNullOrEmpty(tensor);
 		double[][][] result = new double[tensor.length][tensor[0].length][tensor[0][0].length];
@@ -19,6 +21,7 @@ public final class Util {
 		return result;
 	}
 	
+	/** Performs t1 + t2. */
 	public static double[][][] tensorAdd(double[][][] t1, double[][][] t2) {
 		checkTensorNotNullOrEmpty(t1);
 		checkTensorNotNullOrEmpty(t2);
@@ -34,10 +37,12 @@ public final class Util {
 		return result;
 	}
 	
+	/** Performs t1 - t2. */
 	public static double[][][] tensorSubtract(double[][][] t1, double[][][] t2) {
 		return tensorAdd(t1, scalarMultiply(-1, t2));
 	}
 
+	/** Verifies that the tensor is not null and that all 3 dimensions have length > 0. */
 	public static void checkTensorNotNullOrEmpty(double[][][] tensor) {
 		checkNotNull(tensor, "Tensor arg");
 		checkPositive(tensor.length, "Tensor dimension 1", false);
@@ -45,6 +50,7 @@ public final class Util {
 		checkPositive(tensor[0][0].length, "Tensor dimension 3", false);
 	}
 	
+	/** Verifies that the tensors have the same dimensions. */
 	public static void checkTensorDimensionsMatch(double[][][] t1, double[][][] t2) {
 		if (t1.length != t2.length 
 				|| t1[0].length != t2[0].length
@@ -61,12 +67,18 @@ public final class Util {
 		}
 	}
 	
+	/** Verifies that the object with the given name is not null. */
 	public static void checkNotNull(Object obj, String name) {
 		if (obj == null) {
 			throw new NullPointerException(String.format("%s was null!", name));
 		}
 	}
 	
+	/**
+	 * Verifies that the value with the given name is not null.
+	 * 
+	 * The boolean parameter specifies which type of exception to throw.
+	 */
 	public static void checkPositive(double val, String name, boolean sourceIsStateful) {
 		if (val <= 0) {
 			if (sourceIsStateful) {
@@ -77,6 +89,11 @@ public final class Util {
 		}
 	}
 	
+	/**
+	 * Checks that the collection with the given name is nonempty.
+	 * 
+	 * Again, the boolean parameter specifies the type of exception to throw.
+	 */
 	public static void checkNotEmpty(Collection<?> coll, String name, boolean sourceIsStateful) {
 		if (coll.isEmpty()) {
 			if (sourceIsStateful) {

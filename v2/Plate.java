@@ -97,6 +97,7 @@ public class Plate {
 		return new Plate(output);
 	}
 	
+	/** Pack this plate into a 1D array, channel by channel, row by row. */
 	public double[] as1DArray(Plate plate) {
 		// TODO: Implement this method.
 		return null;

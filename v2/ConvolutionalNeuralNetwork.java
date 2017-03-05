@@ -41,6 +41,7 @@ public class ConvolutionalNeuralNetwork {
 		this.useRGB = useRGB;
 	}
 	
+	/** Trains the CNN with the given training data and tuning data. */
 	public void train(Dataset trainSet, Dataset tuneSet, boolean verbose) {
 		double prevAccuracy = 0.0;
 		double currAccuracy = 0.0;
@@ -58,6 +59,7 @@ public class ConvolutionalNeuralNetwork {
 		}
 	}
 
+	/** Passes all images in the dataset through the network and backpropagates the errors. */
 	private void trainUntilEpoch(Dataset trainSet) {
 		for (Instance img : trainSet.getImages()) {
 			double[] output = computeOutput(img);
@@ -80,6 +82,11 @@ public class ConvolutionalNeuralNetwork {
 		}
 	}
 	
+	/**
+	 * Returns the prediction accuracy of this classifier on the test set.
+	 * 
+	 * Here, accuracy is numCorrectlyClassified/numExamples.
+	 */
 	public double test(Dataset testSet, boolean verbose) {
 		int errCount = 0;
 		for (Instance img : testSet.getImages()) {
@@ -92,9 +99,10 @@ public class ConvolutionalNeuralNetwork {
 				System.out.printf("Predicted: %s\t\tActual:%s\n", predicted, img.getLabel());
 			}
 		}
-		return ((double) errCount) / testSet.getSize();
+		return ((double) (testSet.getSize() - errCount)) / testSet.getSize();
 	}
 	
+	/** Returns the predicted label for the image. */
 	public String classify(Instance img) {
 		double[] probs = computeOutput(img);
 		double maxProb = -1;
@@ -108,6 +116,10 @@ public class ConvolutionalNeuralNetwork {
 		return classes.get(bestIndex);
 	}
 	
+	/**
+	 * Propagates the image through the network and returns the last
+	 * (fully-connected) layer's output.
+	 */
 	private double[] computeOutput(Instance img) {
 		// Pass the input through the plate layers first.
 		List<Plate> plates = Arrays.asList(new Plate[]{ instanceToPlate(img) });
@@ -173,17 +185,25 @@ public class ConvolutionalNeuralNetwork {
 		return dblImg;
 	}
 	
+	/** 
+	 * Pack the plates into a single, 1D double array. Used to connect the plate layers
+	 * with the fully connected layers.
+	 */
 	private static double[] packPlates(List<Plate> plates) {
 		// TODO: Implement this method.
 		return null;
 	}
 	
+	/** Unpack the 1D double array into a list of plates (3D double tensors). */
 	private static List<Plate> unpackPlates(double[] packedPlates) {
 		// TODO: Implement this method.
 		return null;
 	}
 	
+	/** Returns a new builder. */
 	public static Builder newBuilder() { return new Builder(); }
+	
+	/** A builder pattern for managing the many parameters of the network. */
 	public static class Builder {
 		private final List<PlateLayer> plateLayers = new ArrayList<>();
 		private List<String> classes = null;

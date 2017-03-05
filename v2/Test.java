@@ -1,5 +1,6 @@
 package v2;
 
+/** Simple sanity checks for problematic methods. */
 public class Test {
 	public static void main(String[] args) {
 		double[][][] data = new double[][][]{

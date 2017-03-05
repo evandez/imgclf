@@ -55,6 +55,7 @@ public class PoolingLayer implements PlateLayer {
 	
 	@Override
 	public List<Plate> propagateError(List<Plate> errors, double learningRate) {
+		// TODO: Implement this method.
 		return null;
 	}
 	
@@ -68,8 +69,13 @@ public class PoolingLayer implements PlateLayer {
 		return builder.toString();
 	}
 	
+	/** Returns a new builder. */
 	public static Builder newBuilder() { return new Builder(); }
 	
+	/** 
+	 * Simple builder pattern for creating PoolingLayers. (Not very helpful now,
+	 * but later we may want to add other parameters.)
+	 */
 	public static class Builder {
 		private int windowHeight = 0;
 		private int windowWidth = 0;
