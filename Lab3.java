@@ -69,23 +69,15 @@ public class Lab3 {
 		String tuneDirectory = "images/tuneset/";
 		String testDirectory = "images/testset/";
 
-		if (args.length > 5) {
-			System.err.println(
-					"Usage error: java Lab3 <train_set_folder_path> <tune_set_folder_path> <test_set_foler_path> <imageSize>");
+		if (args.length != 3) {
+			System.err.println("Usage error: java Lab3 <train_set_folder_path> "
+                    + "<tune_set_folder_path> <test_set_foler_path>");
 			System.exit(1);
 		}
-		if (args.length >= 1) {
-			trainDirectory = args[0];
-		}
-		if (args.length >= 2) {
-			tuneDirectory = args[1];
-		}
-		if (args.length >= 3) {
-			testDirectory = args[2];
-		}
-		if (args.length >= 4) {
-//			imageSize = Integer.parseInt(args[3]);
-		}
+
+        trainDirectory = args[0];
+        tuneDirectory = args[1];
+        testDirectory = args[2];
 
 		// Here are statements with the absolute path to open images folder
 		File trainsetDir = new File(trainDirectory);
@@ -217,9 +209,9 @@ public class Lab3 {
 		// extra feature.
 		System.out.println("\nThe input vector size is " + comma(inputVectorSize - 1) + ".\n");
 
-		Vector<Vector<Double>> trainFeatureVectors = new Vector<Vector<Double>>(trainset.getSize());
-		Vector<Vector<Double>> tuneFeatureVectors = new Vector<Vector<Double>>(tuneset.getSize());
-		Vector<Vector<Double>> testFeatureVectors = new Vector<Vector<Double>>(testset.getSize());
+		Vector<Vector<Double>> trainFeatureVectors = new Vector<>(trainset.getSize());
+		Vector<Vector<Double>> tuneFeatureVectors = new Vector<>(tuneset.getSize());
+		Vector<Vector<Double>> testFeatureVectors = new Vector<>(testset.getSize());
 
 		long start = System.currentTimeMillis();
 		fillFeatureVectors(trainFeatureVectors, trainset);
@@ -417,7 +409,7 @@ public class Lab3 {
 	 * @param upper
 	 *           The upper bound on the interval.
 	 * @return A random number in the interval [0, upper).
-	 * @see Utils#randomInInterval(int, int)
+	 * @see randomInInterval(int, int)
 	 */
 	public static int random0toNminus1(int upper) {
 		return randomInInterval(0, upper);

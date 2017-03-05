@@ -14,7 +14,7 @@ public class Dataset {
 	private ArrayList<Instance> instances;
 
 	public Dataset() {
-		this.instances = new ArrayList<Instance>();
+		this.instances = new ArrayList<>();
 	}
 
 	// get the size of the dataset

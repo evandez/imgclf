@@ -3,14 +3,8 @@ package v2;
 import java.util.function.Function;
 
 public enum ActivationFunction {
-	RELU(new Function<Double, Double>() {
-		@Override
-		public Double apply(Double x) { return Math.max(x, 0); }
-	}),
-	SIGMOID(new Function<Double, Double>() {
-		@Override
-		public Double apply(Double x) { return 1 / (1 + Math.pow(Math.E, -x)); }
-	});
+	RELU(x -> { return Math.max(x, 0); }),
+	SIGMOID(x -> 1 / (1 + Math.pow(Math.E, -x)));
 
 	private final Function<Double, Double> func;
 

@@ -50,7 +50,7 @@ public class ConvolutionalNeuralNetwork {
 			currAccuracy = test(tuneSet, false);
 			
 			if (verbose) {
-				System.out.printf("Epoch %d completed with tune accuracy of %.5f\n", currAccuracy);
+				System.out.printf("Epoch %d completed with tune accuracy of %.5f\n", epoch, currAccuracy);
 			}
 
 			if (currAccuracy < prevAccuracy) {
