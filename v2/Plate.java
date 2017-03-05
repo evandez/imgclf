@@ -24,11 +24,42 @@ public class Plate {
 	/** Returns the width of each channel. */
 	public int getWidth() { return values[0][0].length; }
 	
-	/** Returns the result of convolving the given mask with this plate. */
+	/**
+	 * Returns the result of convolving the given mask with this plate.
+	 * 
+	 * The returned plate has the same size as this one.
+	 */
 	public Plate convolve(Plate mask) {
+		if (getNumChannels() != mask.getNumChannels()) {
+			throw new IllegalArgumentException("Mask must have same number of channels as plate.");
+		} else if (getHeight() < mask.getHeight() || getWidth() < mask.getWidth()) {
+			throw new IllegalArgumentException("Mask must be smaller than plate.");
+		}
 		double[][][] result = new double[getNumChannels()][getHeight()][getWidth()];
-		// TODO: Implement this method.
-		return mask;
+		for (int chan = 0; chan < getNumChannels(); chan++) {
+			for (int i = 0; i < getHeight(); i++) {
+				for (int j = 0; j < getWidth(); j++) {
+					result[chan][i][j] = convolvePixelIJ(mask, chan, i, j);
+				}
+			}
+		}
+		return new Plate(result);
+	}
+	
+	private double convolvePixelIJ(Plate mask, int chan, int i, int j) {
+		double sum = 0.0;
+		for (int k = 0; k < mask.getHeight(); k++) {
+			for (int l = 0; l < mask.getWidth(); l++) {
+				int neighborX = i - (mask.getHeight() / 2) + k;
+				int neighborY = j - (mask.getWidth() / 2) + l;
+				if (neighborX < 0 || neighborX >= getHeight() 
+						|| neighborY < 0 || neighborY >= getWidth()) {
+					continue;
+				}
+				sum += mask.values[chan][k][l] * values[chan][neighborX][neighborY];
+			}
+		}
+		return sum;
 	}
 	
 	/** Flips each channel by 180 degrees. */
