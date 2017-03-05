@@ -144,8 +144,8 @@ public class ConvolutionalNeuralNetwork {
 		builder.append(String.format("Number of plate layers: %d\n", plateLayers.size()));
 		builder.append(
 				String.format(
-						"Number of fully connected layers: %d\n",
-						fullyConnectedLayers.size()));
+						"Number of fully connected hidden layers: %d\n",
+						fullyConnectedLayers.size() - 1));
 		builder.append("\n//////\tNETWORK STRUCTURE\t//////\n");
 		for (PlateLayer plateLayer : plateLayers) {
 			builder.append(plateLayer.toString());
