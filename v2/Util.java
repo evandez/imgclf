@@ -1,0 +1,90 @@
+package v2;
+
+import java.util.Collection;
+import java.util.Random;
+
+public final class Util {
+	public static final Random RNG = new Random();
+	
+	public static double[][][] scalarMultiply(double scalar, double[][][] tensor) {
+		checkTensorNotNullOrEmpty(tensor);
+		double[][][] result = new double[tensor.length][tensor[0].length][tensor[0][0].length];
+		for (int i = 0; i < tensor.length; i++) {
+			for (int j = 0; j < tensor[i].length; j++) {
+				for (int k = 0; k < tensor[i][j].length; k++) {
+					result[i][j][k] = tensor[i][j][k] * scalar;
+				}
+			}
+ 		}
+		return result;
+	}
+	
+	public static double[][][] tensorAdd(double[][][] t1, double[][][] t2) {
+		checkTensorNotNullOrEmpty(t1);
+		checkTensorNotNullOrEmpty(t2);
+		checkTensorDimensionsMatch(t1, t2);
+		double[][][] result = new double[t1.length][t1[0].length][t1[0][0].length];
+		for (int i = 0; i < result.length; i++) {
+			for (int j = 0; j < result[i].length; j++) {
+				for (int k = 0; k < result[i][j].length; k++) {
+					result[i][j][k] = t1[i][j][k] + t2[i][j][k];
+				}
+			}
+		}
+		return result;
+	}
+	
+	public static double[][][] tensorSubtract(double[][][] t1, double[][][] t2) {
+		return tensorAdd(t1, scalarMultiply(-1, t2));
+	}
+
+	public static void checkTensorNotNullOrEmpty(double[][][] tensor) {
+		checkNotNull(tensor, "Tensor arg");
+		checkPositive(tensor.length, "Tensor dimension 1", false);
+		checkPositive(tensor[0].length, "Tensor dimension 2", false);
+		checkPositive(tensor[0][0].length, "Tensor dimension 3", false);
+	}
+	
+	public static void checkTensorDimensionsMatch(double[][][] t1, double[][][] t2) {
+		if (t1.length != t2.length 
+				|| t1[0].length != t2[0].length
+				|| t1[0][0].length != t2[0][0].length) {
+			throw new IllegalArgumentException(
+					String.format(
+							"Tensor dimensions do not match...\tT1:%dx%dx%d\tT2:%dx%dx%d\n",
+							t1.length,
+							t1[0].length,
+							t1[0][0].length,
+							t2.length,
+							t2[0].length,
+							t2[0].length));
+		}
+	}
+	
+	public static void checkNotNull(Object obj, String name) {
+		if (obj == null) {
+			throw new NullPointerException(String.format("%s was null!", name));
+		}
+	}
+	
+	public static void checkPositive(double val, String name, boolean sourceIsStateful) {
+		if (val <= 0) {
+			if (sourceIsStateful) {
+				throw new IllegalStateException(String.format("%s was not set!", name));
+			} else {				
+				throw new IllegalArgumentException(String.format("%s must be positive!", name));
+			}
+		}
+	}
+	
+	public static void checkNotEmpty(Collection<?> coll, String name, boolean sourceIsStateful) {
+		if (coll.isEmpty()) {
+			if (sourceIsStateful) {
+				throw new IllegalStateException(
+						String.format("%s must have at least one value!", name));
+			} else {
+				throw new IllegalArgumentException(String.format("%s must be nonempty!", name));
+			}
+		}
+	}
+}
