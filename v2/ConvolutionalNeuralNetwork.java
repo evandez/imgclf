@@ -146,9 +146,16 @@ public class ConvolutionalNeuralNetwork {
 				String.format(
 						"Number of fully connected hidden layers: %d\n",
 						fullyConnectedLayers.size() - 1));
+		builder.append(
+				String.format("Predicts these classes: %s\n", classes));
+		builder.append(String.format("Using RGB: %b\n", useRGB));
 		builder.append("\n//////\tNETWORK STRUCTURE\t//////\n");
-		for (PlateLayer plateLayer : plateLayers) {
-			builder.append(plateLayer.toString());
+		if (plateLayers.isEmpty()) {
+			builder.append("\n------\tNo plate layers!\t------\n");
+		} else {
+			for (PlateLayer plateLayer : plateLayers) {
+				builder.append(plateLayer.toString());
+			}
 		}
 		for (FullyConnectedLayer fcLayer : fullyConnectedLayers) {
 			builder.append(fcLayer.toString());
@@ -190,8 +197,18 @@ public class ConvolutionalNeuralNetwork {
 	 * with the fully connected layers.
 	 */
 	private static double[] packPlates(List<Plate> plates) {
-		// TODO: Implement this method.
-		return null;
+		checkNotEmpty(plates, "Plates to pack", false);
+		int flattenedPlateSize = plates.get(0).getTotalNumValues();
+		double[] result = new double[flattenedPlateSize * plates.size()];
+		for (int i = 0; i < plates.size(); i++) {
+			System.arraycopy(
+					plates.get(i).as1DArray(),
+					0 /* Copy the whole flattened plate! */,
+					result,
+					i * flattenedPlateSize,
+					flattenedPlateSize);
+		}
+		return result;
 	}
 	
 	/** Unpack the 1D double array into a list of plates (3D double tensors). */
@@ -280,8 +297,7 @@ public class ConvolutionalNeuralNetwork {
 		}
 		
 		public ConvolutionalNeuralNetwork build() {
-			// TODO: Allow only fully connected layer for testing purposes.
-			checkNotEmpty(plateLayers, "Plate layers", true);
+			// No check for nonemptyness of plate layers - if none provided, use fully connected.
 			checkNotNull(classes, "Classes");
 			checkPositive(inputHeight, "Input height", true);
 			checkPositive(inputWidth, "Input width", true);
@@ -289,11 +305,15 @@ public class ConvolutionalNeuralNetwork {
 			checkPositive(fullyConnectedDepth, "Fully connected depth", true);
 			checkPositive(maxEpochs, "Max epochs", true);
 			checkPositive(learningRate, "Learning rate", true);
+			// No check for useRGB. Just default to true.
 
 			// Given input dimensions, determine how many plates will be output by
 			// the last plate layer, and the dimensions of those plates.
-			int outputWidth = inputWidth;
+			// Note that if there are no plate layers, then this result defaults to
+			// imageHeight * imageWidth, which is what we need in that case.
 			int outputHeight = inputHeight;
+			int outputWidth = inputWidth;
+			int outputChannels = useRGB ? 4 : 1;
 			int numOutputs = 1;
 			for (PlateLayer plateLayer : plateLayers) {
 				outputHeight = plateLayer.calculateOutputHeight(outputHeight);
@@ -304,9 +324,10 @@ public class ConvolutionalNeuralNetwork {
 			List<FullyConnectedLayer> fullyConnectedLayers = new ArrayList<>(fullyConnectedDepth);
 			
 			// Always have at least one hidden layer - add it first.
+			// TODO: Make the fully-connected activation function a parameter.
 			fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
 					.setActivationFunction(ActivationFunction.RELU)
-					.setNumInputs(outputWidth * outputHeight * numOutputs)
+					.setNumInputs(outputWidth * outputHeight * outputChannels * numOutputs)
 					.setNumNodes(fullyConnectedWidth)
 					.build());
 			

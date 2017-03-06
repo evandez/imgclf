@@ -41,6 +41,14 @@ public class Lab3 {
 
 	public static int NUM_CATEGORIES = Category.values().length;
 
+	// Store the categories as strings.
+	public static List<String> categoryNames = new ArrayList<>();
+	static {
+		for (Category cat : Category.values()) {
+			categoryNames.add(cat.toString());
+		}
+	}
+	
 	// If true, FOUR units are used per pixel: red, green, blue, and grey.
 	// If false, only ONE (the grey-scale value).
 	private static final Boolean useRGB = true;
@@ -50,7 +58,7 @@ public class Lab3 {
 
 	// Should be one of { "perceptrons", "oneLayer", "deep" }; You might want to use this if you are trying approaches
 	// other than a Deep ANN.
-	private static String modelToUse = "deep";
+	private static String modelToUse = "oneLayer";
 
 	// The provided code uses a 1D vector of input features. You might want to create a 2D version for your Depp ANN
 	// code. Or use the get2DfeatureValue() 'accessor function' that maps 2D coordinates into the 1D vector. The last
@@ -508,72 +516,31 @@ public class Lab3 {
 	//////////////////////////////////////////////////////////////////////////////////////////////// HIDDEN
 	//////////////////////////////////////////////////////////////////////////////////////////////// LAYER
 
-	private static boolean debugOneLayer = false; // If set true, more things
-	// checked and/or printed
-	// (which does slow down the
-	// code).
-	private static int NUM_HIDDEN = 250;
-
-	private static final double LEARNING_RATE = .0005;
-	private static final double MOMENTUM_RATE = 0.75;
-	private static final double REGULARIZATION_RATE = 0.00001;
-
-	private static int trainOneHU(Vector<Vector<Double>> trainFeatureVectors, Vector<Vector<Double>> tuneFeatureVectors,
+	private static int trainOneHU(
+			Vector<Vector<Double>> trainFeatureVectors,
+			Vector<Vector<Double>> tuneFeatureVectors,
 			Vector<Vector<Double>> testFeatureVectors) {
-//		long overallStart = System.currentTimeMillis(), start = overallStart;
-//		int trainSetErrors = Integer.MAX_VALUE, tuneSetErrors = Integer.MAX_VALUE, best_tuneSetErrors = Integer.MAX_VALUE,
-//				testSetErrors = Integer.MAX_VALUE, best_epoch = -1, testSetErrorsAtBestTune = Integer.MAX_VALUE;
-//
-//		NeuralNetwork nn = new NeuralNetwork(inputVectorSize - 1, NUM_HIDDEN, Category.values().length);
-//		NeuralNetwork.setParameters(LEARNING_RATE, MOMENTUM_RATE, REGULARIZATION_RATE);
-//		System.out.println(nn.accuracy(testFeatureVectors, false) + " " + nn.accuracy(trainFeatureVectors, false));
-//		for (int epoch = 1; epoch <= maxEpochs /* && trainSetErrors > 0 */; epoch++) {
-//			// might still want to train after trainset error =0 since we want to get all predictions on the 'right side of
-//			// zero' (whereas errors defined wrt HIGHEST output).
-//			permute(trainFeatureVectors); // Note: this is an IN-PLACE permute but that is OK.
-//
-//			for (int i = 0; i < trainFeatureVectors.size(); i++) {
-//				nn.updateWeights(trainFeatureVectors.get(i));
-//			}
-//
-//			// CODE NEEDED HERE!
-////			System.out.println("Done with Epoch # " + comma(epoch) + ".  Took "
-////					+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + " ("
-////					+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - overallStart) + " overall).");
-////			reportOneLayerConfig(); // Print out some info after epoch, so you can see what experiment is running in a
-////											// given console.
-//			System.out.println(nn.accuracy(testFeatureVectors, false) + " " + nn.accuracy(trainFeatureVectors, false));
-//			start = System.currentTimeMillis();
-//		}
-
-//		System.out.println(
-//				"\n***** Best tuneset errors = " + comma(best_tuneSetErrors) + " of " + comma(tuneFeatureVectors.size())
-//						+ " (" + truncate((100.0 * best_tuneSetErrors) / tuneFeatureVectors.size(), 2) + "%) at epoch = "
-//						+ comma(best_epoch) + " (testset errors = " + comma(testSetErrorsAtBestTune) + " of "
-//						+ comma(testFeatureVectors.size()) + ", "
-//						+ truncate((100.0 * testSetErrorsAtBestTune) / testFeatureVectors.size(), 2) + "%).\n");
+		ConvolutionalNeuralNetwork cnn = ConvolutionalNeuralNetwork.newBuilder()
+				.setInputHeight(imageSize)
+				.setInputWidth(imageSize)
+				.setFullyConnectedDepth(1)
+				.setFullyConnectedWidth(300)
+				.setClasses(categoryNames)
+				.setLearningRate(eta)
+				.setMaxEpochs(maxEpochs)
+				.build();
+		System.out.println("******\tSingle-HU CNN constructed."
+				+ " The structure is described below.\t******\n");
+		System.out.println(cnn.toString());
+		
+		System.out.println("\n******\tSingle-HU CNN training has begun."
+				+ " Updates will be provided after each epoch.\t******");
+		//cnn.train(trainSet, tuneSet, true);
+		
+		System.out.println("******\tSingle-HU CNN testing has begun.\t******");
+		//cnn.test(testSet, true);		
 		return 0;
 	}
-
-	private static void reportOneLayerConfig() {
-		System.out.println("***** ONE-LAYER: UseRGB = " + useRGB + ", imageSize = " + imageSize + "x" + imageSize
-				+ ", fraction of training examples used = " + truncate(fractionOfTrainingToUse, 2) + ", eta = "
-				+ truncate(eta, 2) + ", dropout rate = " + truncate(dropoutRate, 2) + ", number HUs = " + NUM_HIDDEN
-		// + ", activationFunctionForHUs = " + activationFunctionForHUs + ",
-		// activationFunctionForOutputs = " + activationFunctionForOutputs
-		// + ", # forward props = " + comma(forwardPropCounter)
-		);
-		// for (Category cat : Category.values()) { // Report the output unit
-		// biases.
-		// int catIndex = cat.ordinal();
-		//
-		// System.out.print(" bias(" + cat + ") = " +
-		// truncate(weightsToOutputUnits[numberOfHiddenUnits][catIndex], 6));
-		// } System.out.println();
-	}
-
-	// private static long forwardPropCounter = 0; // Count the number of
-	// forward propagations performed.
 
 	//////////////////////////////////////////////////////////////////////////////////////////////// DEEP
 	//////////////////////////////////////////////////////////////////////////////////////////////// ANN
@@ -583,13 +550,6 @@ public class Lab3 {
 			Vector<Vector<Double>> trainFeatureVectors,
 			Vector<Vector<Double>> tuneFeatureVectors,
 			Vector<Vector<Double>> testFeatureVectors) {
-		// Store the categories as strings.
-		List<String> classes = new ArrayList<>();
-		for (Category cat : Category.values()) {
-			classes.add(cat.toString());
-		}
-		
-		// Create the network.
 		ConvolutionalNeuralNetwork cnn = ConvolutionalNeuralNetwork.newBuilder()
 				.setInputHeight(imageSize)
 				.setInputWidth(imageSize)
@@ -605,20 +565,20 @@ public class Lab3 {
 				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).build())
 				.setFullyConnectedDepth(1) // i.e., one hidden layer.
 				.setFullyConnectedWidth(300)
-				.setClasses(classes)
+				.setClasses(categoryNames)
 				.setMaxEpochs(maxEpochs)
 				.setLearningRate(eta)
 				.build();
 		
-		System.out.println("******\tCNN constructed."
+		System.out.println("******\tDeep CNN constructed."
 				+ " The structure is described below.\t******\n");
 		System.out.println(cnn.toString());
 		
-		System.out.println("\n******\tCNN training has begun."
+		System.out.println("\n******\tDeep CNN training has begun."
 				+ " Updates will be provided after each epoch.\t******");
 		//cnn.train(trainSet, tuneSet, true);
 		
-		System.out.println("******\tCNN testing has begun.\t******");
+		System.out.println("******\tDeep CNN testing has begun.\t******");
 		//cnn.test(testSet, true);
 		return 0;
 	}

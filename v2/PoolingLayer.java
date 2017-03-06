@@ -62,7 +62,7 @@ public class PoolingLayer implements PlateLayer {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("\n------\tPooling Layer\t------\n");
+		builder.append("\n------\tPooling Layer\t------\n\n");
 		builder.append(String.format("Window height: %d\n", windowHeight));
 		builder.append(String.format("Window width: %d\n", windowWidth));
 		builder.append("\n\t------------\t\n");

@@ -24,6 +24,9 @@ public class Plate {
 	/** Returns the width of each channel. */
 	public int getWidth() { return values[0][0].length; }
 	
+	/** Returns the total number of values in the plate. */
+	public int getTotalNumValues() { return getNumChannels() * getHeight() * getWidth(); }
+	
 	/**
 	 * Returns the result of convolving the given mask with this plate.
 	 * 
@@ -130,7 +133,7 @@ public class Plate {
 	
 	/** Pack this plate into a 1D array, channel by channel, row by row. */
 	public double[] as1DArray() {
-		double[] result = new double[getNumChannels() * getHeight() * getWidth()];
+		double[] result = new double[getTotalNumValues()];
 		for (int chan = 0; chan < getNumChannels(); chan++) {
 			for (int row = 0; row < getHeight(); row++) {
 				System.arraycopy(

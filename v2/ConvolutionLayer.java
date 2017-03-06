@@ -68,7 +68,7 @@ public class ConvolutionLayer implements PlateLayer {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("\n------\tConvolution Layer\t------\n");
+		builder.append("\n------\tConvolution Layer\t------\n\n");
 		builder.append(String.format(
 				"Convolution Size: %dx%d\n",
 				convolutions.get(0).getHeight(),

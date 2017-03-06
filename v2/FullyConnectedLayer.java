@@ -46,7 +46,7 @@ public class FullyConnectedLayer {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("\n------\tFully Connected Layer\t------\n");
+		builder.append("\n------\tFully Connected Layer\t------\n\n");
 		builder.append(String.format("Number of inputs: %d\n", weights[0].length));
 		builder.append(String.format("Number of nodes: %d\n", weights.length));
 		builder.append(String.format("Activation function: %s\n", activation.toString()));
