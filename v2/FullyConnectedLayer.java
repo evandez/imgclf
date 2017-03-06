@@ -1,5 +1,8 @@
 package v2;
 
+import static v2.Util.checkNotNull;
+import static v2.Util.checkPositive;
+
 /** 
  * Your standard fully-connected ANN.
  * 
@@ -66,39 +69,31 @@ public class FullyConnectedLayer {
 		private Builder() {}
 
 		public Builder setActivationFunction(ActivationFunction func) {
-			if (func == null) {
-				throw new NullPointerException();
-			}
+			checkNotNull(func, "Fully connected activation function");
 			this.func = func;
 			return this;
 		}
 		
 		public Builder setNumInputs(int numInputs) {
-			if (numInputs <= 0) {
-				throw new IllegalArgumentException(
-						"Must have at least one input in fully connected layer.");
-			}
+			checkPositive(numInputs, "Number of fully connected inputs", false);
 			this.numInputs = numInputs;
 			return this;
 		}
 		
 		public Builder setNumNodes(int numNodes) {
-			if (numNodes <= 0) {
-				throw new IllegalArgumentException(
-						"Must have at least one node in fully connected layer.");
-			}
+			checkPositive(numNodes, "Number of fully connected nodes", false);
 			this.numNodes = numNodes;
 			return this;
 		}
 		
 		public FullyConnectedLayer build() {
-			if (numInputs <= 0 || numNodes <= 0 || func == null) {
-				throw new IllegalStateException(
-						"One of node count, input count, and activation function not specified.");
-			}
+			checkNotNull(func, "Fully connected activation function");
+			checkPositive(numInputs, "Number of fully connected inputs", true);
+			checkPositive(numNodes, "Number of fully connected nodes", true);
 			double[][] weights = new double[numNodes][numInputs];
 			for (int i = 0; i < weights.length; i++) {
 				for (int j = 0; j < weights[i].length; j++) {
+					// TODO: Use Judy's weight initialization.
 					weights[i][j] = Util.RNG.nextGaussian();
 				}
 			}
