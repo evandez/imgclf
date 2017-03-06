@@ -1,5 +1,7 @@
 package v2;
 
+import static v2.Util.checkNotEmpty;
+import static v2.Util.checkNotNull;
 import static v2.Util.checkPositive;
 
 import java.util.ArrayList;
@@ -34,11 +36,9 @@ public class ConvolutionLayer implements PlateLayer {
 
 	@Override
 	public List<Plate> computeOutput(List<Plate> input) {
-		if (input == null) {
-			throw new NullPointerException();
-		} else if (input.isEmpty()) {
-			throw new IllegalArgumentException("Input list must be nonempty.");
-		}
+		checkNotNull(input, "Convolution layer input");
+		checkNotEmpty(input, "Convolution layer input", false);
+		
 		// Convolve each input with each mask.
 		List<Plate> output = new ArrayList<>();
 		for (Plate mask : convolutions) {

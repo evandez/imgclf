@@ -530,10 +530,10 @@ public class Lab3 {
 				.setMaxEpochs(maxEpochs)
 				.build();
 		System.out.println("******\tSingle-HU CNN constructed."
-				+ " The structure is described below.\t******\n");
+				+ " The structure is described below.\t******");
 		System.out.println(cnn.toString());
 		
-		System.out.println("\n******\tSingle-HU CNN training has begun."
+		System.out.println("******\tSingle-HU CNN training has begun."
 				+ " Updates will be provided after each epoch.\t******");
 		//cnn.train(trainSet, tuneSet, true);
 		
@@ -571,10 +571,10 @@ public class Lab3 {
 				.build();
 		
 		System.out.println("******\tDeep CNN constructed."
-				+ " The structure is described below.\t******\n");
+				+ " The structure is described below.\t******");
 		System.out.println(cnn.toString());
 		
-		System.out.println("\n******\tDeep CNN training has begun."
+		System.out.println("******\tDeep CNN training has begun."
 				+ " Updates will be provided after each epoch.\t******");
 		//cnn.train(trainSet, tuneSet, true);
 		

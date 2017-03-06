@@ -8,7 +8,7 @@ import static v2.Util.checkPositive;
  * 
  * This class stores the weights between inputs and nodes, and provides
  * functionality for computing the output given an input vector and for
- * backpropagating errors.
+ * back-propagating errors.
  */
 public class FullyConnectedLayer {
 	private final double[][] weights;
