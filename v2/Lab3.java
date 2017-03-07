@@ -20,7 +20,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
@@ -58,7 +57,7 @@ public class Lab3 {
 
 	// Should be one of { "perceptrons", "oneLayer", "deep" }; You might want to use this if you are trying approaches
 	// other than a Deep ANN.
-	private static String modelToUse = "oneLayer";
+	private static String modelToUse = "deep";
 
 	// The provided code uses a 1D vector of input features. You might want to create a 2D version for your Depp ANN
 	// code. Or use the get2DfeatureValue() 'accessor function' that maps 2D coordinates into the 1D vector. The last
@@ -531,7 +530,7 @@ public class Lab3 {
 				.build();
 		System.out.println("******\tSingle-HU CNN constructed."
 				+ " The structure is described below.\t******");
-		System.out.println(cnn.toString());
+		System.out.println(cnn);
 		
 		System.out.println("******\tSingle-HU CNN training has begun."
 				+ " Updates will be provided after each epoch.\t******");
@@ -572,7 +571,7 @@ public class Lab3 {
 
 		System.out.println("******\tDeep CNN constructed."
 				+ " The structure is described below.\t******");
-		System.out.println(cnn.toString());
+		System.out.println(cnn);
 
 		System.out.println("******\tDeep CNN training has begun."
 				+ " Updates will be provided after each epoch.\t******");
