@@ -1,3 +1,4 @@
+package v1;
 /**
  * Class for internal organization of a deep Neural Network. There are 7 types of nodes.
  */

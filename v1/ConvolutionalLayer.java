@@ -1,3 +1,4 @@
+package v1;
 public class ConvolutionalLayer extends Layer {
 
 	public double[][][][] convolutions;

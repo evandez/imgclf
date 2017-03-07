@@ -1,3 +1,4 @@
+package v1;
 /**
  * 
  * This is the class for each image instance

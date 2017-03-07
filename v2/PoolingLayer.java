@@ -59,14 +59,15 @@ public class PoolingLayer implements PlateLayer {
 		// TODO: Reuse memory.
 		List<Plate> output = new ArrayList<Plate>(gradients.size());
 		for (Plate errorPlate : gradients) {
-			double[][][] values = errorPlate.getValues();
 			double[][][] upscaledValues = new double[maximumOfWindow.length][maximumOfWindow[0].length][maximumOfWindow[0][0].length];
 			for (int i = 0; i < maximumOfWindow.length; i++) {
 				for (int j = 0; j < maximumOfWindow[i].length; j++) {
 					for (int k = 0; k < maximumOfWindow[i][j].length; k++) {
 						// gradient is either copied from upper layer or zero - Ran Manor's answer at
 						// https://www.quora.com/In-neural-networks-how-does-backpropagation-get-carried-through-maxpool-layers
-						upscaledValues[i][j][k] = (maximumOfWindow[i][j][k]) ? values[i][j / windowHeight][k / windowWidth] : 0;
+						upscaledValues[i][j][k] = maximumOfWindow[i][j][k]
+								? errorPlate.valueAt(i, j / windowHeight, k / windowWidth)
+								: 0;
 					}
 				}
 			}

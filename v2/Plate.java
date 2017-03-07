@@ -2,6 +2,7 @@ package v2;
 
 import static v2.Util.checkNotNull;
 import static v2.Util.checkPositive;
+import static v2.Util.checkValueInRange;
 
 /** Represents something image-like. */
 public class Plate {
@@ -27,8 +28,14 @@ public class Plate {
 	/** Returns the total number of values in the plate. */
 	public int getTotalNumValues() { return getNumChannels() * getHeight() * getWidth(); }
 	
-	public double[][][] getValues() { return values; }
-	
+	/** Returns the value at the given channel, row, and column. */
+	public double valueAt(int chan, int row, int col) {
+		checkValueInRange(chan, 0, getNumChannels(), "Channel index");
+		checkValueInRange(row, 0, getHeight(), "Row index");
+		checkValueInRange(col, 0, getWidth(), "Column index");
+		return values[chan][row][col];
+	}
+
 	/**
 	 * Returns the result of convolving the given mask with this plate.
 	 * 
@@ -82,6 +89,8 @@ public class Plate {
 	
 	/** Returns the max-pooled plate. No overlap between each pool. */
 	public Plate maxPool(int windowHeight, int windowWidth) {
+		checkValueInRange(windowHeight, 0, getHeight(), "Max pool window height");
+		checkValueInRange(windowWidth, 0, getWidth(), "Max pool window width");
 		int resultHeight = getHeight() / windowHeight;
 		int resultWidth = getWidth() / windowWidth;
 		resultHeight += getHeight() % windowHeight == 0 ? 0 : 1;
