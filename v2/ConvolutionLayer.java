@@ -125,8 +125,8 @@ public class ConvolutionLayer implements PlateLayer {
 		}
 		
 		// TODO: We should probably use the initialization method suggested by Judy.
-		private static double[][][] createRandomConvolution(int height, int width, int channels) {
-			double[][][] plateValues = new double[height][width][channels];
+		private static double[][][] createRandomConvolution(int channels, int height, int width) {
+			double[][][] plateValues = new double[channels][height][width];
 			for (int i = 0; i < plateValues.length; i++) {
 				for (int j = 0; j < plateValues[i].length; j++) {
 					for (int k = 0; k < plateValues[i][j].length; k++) {
