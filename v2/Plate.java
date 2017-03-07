@@ -27,6 +27,8 @@ public class Plate {
 	/** Returns the total number of values in the plate. */
 	public int getTotalNumValues() { return getNumChannels() * getHeight() * getWidth(); }
 	
+	public double[][][] getValues() { return values; }
+	
 	/**
 	 * Returns the result of convolving the given mask with this plate.
 	 * 
