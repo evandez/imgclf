@@ -18,7 +18,7 @@ public class FullyConnectedLayer {
 		this.weights = weights;
 		this.activation = activation;
 	}
-	
+
 	/** Compute the output of the given input vector. */
 	public double[] computeOutput(double[] input) {
 		if (input.length != weights[0].length) { // Valid check because we enforce > 0 inputs.

@@ -96,7 +96,7 @@ public class Lab3 {
 			testDirectory = args[2];
 		}
 		if (args.length >= 4) {
-//			imageSize = Integer.parseInt(args[3]);
+			imageSize = Integer.parseInt(args[3]);
 		}
 
 		// Here are statements with the absolute path to open images folder
@@ -569,11 +569,11 @@ public class Lab3 {
 				.setMaxEpochs(maxEpochs)
 				.setLearningRate(eta)
 				.build();
-		
+
 		System.out.println("******\tDeep CNN constructed."
 				+ " The structure is described below.\t******");
 		System.out.println(cnn.toString());
-		
+
 		System.out.println("******\tDeep CNN training has begun."
 				+ " Updates will be provided after each epoch.\t******");
 		//cnn.train(trainSet, tuneSet, true);

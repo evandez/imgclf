@@ -2,6 +2,7 @@ package v2;
 
 import java.util.function.Function;
 
+/** Represents activation functions for any node. */
 public enum ActivationFunction {
 	RELU(x -> { return Math.max(x, 0); }),
 	SIGMOID(x -> 1 / (1 + Math.pow(Math.E, -x)));
