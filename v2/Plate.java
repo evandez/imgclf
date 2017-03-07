@@ -9,9 +9,9 @@ public class Plate {
 	
 	public Plate(double[][][] values) {
 		checkNotNull(values, "Plate values");
-		checkPositive(values.length, "Plate height", false);
-		checkPositive(values[0].length, "Plate width", false);
-		checkPositive(values[0][0].length, "Plate channels", false);
+		checkPositive(values.length, "Plate channels", false);
+		checkPositive(values[0].length, "Plate height", false);
+		checkPositive(values[0][0].length, "Plate width", false);
 		this.values = values;
 	}
 
@@ -19,10 +19,10 @@ public class Plate {
 	public int getNumChannels() { return values.length; }
 	
 	/** Returns the height of each channel. */
-	public int getHeight() { return values.length; }
+	public int getHeight() { return values[0].length; }
 	
 	/** Returns the width of each channel. */
-	public int getWidth() { return values[0].length; }
+	public int getWidth() { return values[0][0].length; }
 	
 	/** Returns the total number of values in the plate. */
 	public int getTotalNumValues() { return getNumChannels() * getHeight() * getWidth(); }

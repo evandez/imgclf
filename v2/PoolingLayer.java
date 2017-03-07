@@ -56,6 +56,10 @@ public class PoolingLayer implements PlateLayer {
 	@Override
 	public List<Plate> propagateError(List<Plate> errors, double learningRate) {
 		// TODO: Implement this method.
+		List<Plate> output = new ArrayList<Plate>(errors.size());
+		for (Plate errorPlate: errors) {
+			
+		}
 		return null;
 	}
 	

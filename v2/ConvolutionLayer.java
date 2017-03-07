@@ -117,9 +117,9 @@ public class ConvolutionLayer implements PlateLayer {
 				convolutions.add(
 						new Plate(
 								createRandomConvolution(
+										convolutionChannels,
 										convolutionHeight,
-										convolutionWidth,
-										convolutionChannels)));
+										convolutionWidth)));
 			}
 			return new ConvolutionLayer(convolutions);
 		}
