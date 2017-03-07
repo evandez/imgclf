@@ -8,6 +8,12 @@ import static v2.Util.checkValueInRange;
 public class Plate {
 	private final double[][][] values;
 	
+	/**
+	 * Constructs a new plate for the given values. 
+	 * 
+	 * IMPORTANT: The values should be organized so that the dimensions follow the
+	 * pattern of (channels, height, width).
+	 */
 	public Plate(double[][][] values) {
 		checkNotNull(values, "Plate values");
 		checkPositive(values.length, "Plate channels", false);
