@@ -70,7 +70,8 @@ public class ConvolutionLayer implements PlateLayer {
 		StringBuilder builder = new StringBuilder();
 		builder.append("\n------\tConvolution Layer\t------\n\n");
 		builder.append(String.format(
-				"Convolution Size: %dx%d\n",
+				"Convolution Size: %dx%dx%d\n",
+				convolutions.get(0).getNumChannels(),
 				convolutions.get(0).getHeight(),
 				convolutions.get(0).getWidth()));
 		builder.append(String.format("Number of convolutions: %d\n", convolutions.size()));
@@ -84,15 +85,18 @@ public class ConvolutionLayer implements PlateLayer {
 	
 	/** A simple builder pattern for managing the layer's parameters at construction. */
 	public static class Builder {
+		private int numChannels = 0;
 		private int convolutionHeight = 0;
 		private int convolutionWidth = 0;
 		private int numConvolutions = 0;
 		
 		private Builder() {}
 
-		public Builder setConvolutionSize(int height, int width) {
+		public Builder setConvolutionSize(int numChannels, int height, int width) {
+			checkPositive(numChannels, "Number of channels", false);
 			checkPositive(height, "Convolution height", false);
 			checkPositive(width, "Convolution width", false);
+			this.numChannels = numChannels;
 			this.convolutionHeight = height;
 			this.convolutionWidth = width;
 			return this;
@@ -112,17 +116,19 @@ public class ConvolutionLayer implements PlateLayer {
 			for (int i = 0; i < numConvolutions; i++) {
 				convolutions.add(
 						new Plate(
-								createRandomConvolution(convolutionHeight, convolutionWidth)));
+								createRandomConvolution(numChannels, convolutionHeight, convolutionWidth)));
 			}
 			return new ConvolutionLayer(convolutions);
 		}
 		
 		// TODO: We should probably use the initialization method suggested by Judy.
-		private static double[][][] createRandomConvolution(int height, int width) {
-			double[][][] plateValues = new double[1 /* single channel */][height][width];
-			for (int i = 0; i < plateValues[0].length; i++) {
-				for (int j = 0; j < plateValues[0][i].length; j++) {
-					plateValues[0][i][j] = Util.RNG.nextGaussian();
+		private static double[][][] createRandomConvolution(int numChannels, int height, int width) {
+			double[][][] plateValues = new double[numChannels][height][width];
+			for (int i = 0; i < plateValues.length; i++) {
+				for (int j = 0; j < plateValues[i].length; j++) {
+					for (int k = 0; k < plateValues[i][j].length; k++) {
+						plateValues[i][j][k] = Util.RNG.nextGaussian();
+					}
 				}
 			}
 			return plateValues;
