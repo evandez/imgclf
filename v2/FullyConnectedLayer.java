@@ -2,6 +2,9 @@ package v2;
 
 import static v2.Util.checkNotNull;
 import static v2.Util.checkPositive;
+import static v2.Util.matrixMultiply;
+import static v2.Util.scalarMultiply;
+import static v2.Util.tensorSubtract;
 
 /** 
  * Your standard fully-connected ANN.
@@ -12,32 +15,30 @@ import static v2.Util.checkPositive;
  */
 public class FullyConnectedLayer {
 	private final double[][] weights;
+	private final double[] lastOutput;
 	private final ActivationFunction activation;
-	
+
 	private FullyConnectedLayer(double[][] weights, ActivationFunction activation) {
 		this.weights = weights;
+		this.lastOutput = new double[weights[0].length]; // TODO: Is this correct?
 		this.activation = activation;
 	}
 
 	/** Compute the output of the given input vector. */
 	public double[] computeOutput(double[] input) {
-		if (input.length != weights[0].length) { // Valid check because we enforce > 0 inputs.
-			System.out.println(input.length + " vs. " + weights[0].length);
-			System.out.println(weights.length);
+		if (input.length != weights[0].length) {
 			throw new IllegalArgumentException(
 					"Input length must match layer input specification.");
 		}
-		double[] outputs = new double[weights.length]; 
-		for (int i = 0; i < outputs.length; i++) {
+		for (int i = 0; i < lastOutput.length; i++) {
 			double sum = 0;
 			for (int j = 0; j < weights[i].length; j++) {
 				sum += weights[i][j] * input[j];
 			}
 			// TODO: Add offset.
-			outputs[i] = activation.apply(sum);
+			lastOutput[i] = activation.apply(sum);
 		}
-		
-		return outputs;
+		return lastOutput;
 	}
 
 	/** 
@@ -45,8 +46,19 @@ public class FullyConnectedLayer {
 	 * for this layer.
 	 */
 	public double[] propagateError(double[] error, double learningRate) {
-		// TODO: Implement this method.
-		return null;
+		// Compute deltas.
+		double[] deltas = new double[weights.length];
+		// TODO: The calculation.
+		
+		// Update the weights.
+		tensorSubtract(
+				weights,
+				scalarMultiply(
+						learningRate,
+						matrixMultiply(new double[][]{ deltas }, new double[][]{ lastOutput }),
+						true /* inline */),
+				true /* inline */);
+		return deltas;
 	}
 	
 	@Override

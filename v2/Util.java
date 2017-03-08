@@ -8,10 +8,64 @@ public final class Util {
 	public static final int SEED = 0;
 	public static final Random RNG = new Random(SEED);
 	
-	/** Performs tensor (3D matrix) scalar multiplication. */
-	public static double[][][] scalarMultiply(double scalar, double[][][] tensor) {
+	/** Performs m1 * m2, assuming that m1 has dimensions (m, k) and m2 (k, n). */
+	public static double[][] matrixMultiply(double[][] m1, double[][] m2) {
+		checkMatrixNotNullOrEmpty(m1);
+		checkMatrixNotNullOrEmpty(m2);
+		checkMatrixDimensionsAlignForMult(m1, m2);
+		double[][] result = new double[m1.length][m2[0].length];
+		for (int i = 0; i < result.length; i++) {
+			for (int j = 0; j < result[i].length; j++) {
+				result[i][j] = innerProduct(m1[i], getColumnOfMatrix(m2, j));
+			}
+		}
+		return result;
+	}
+	
+	/** Computes the inner product of two vectors. */
+	public static double innerProduct(double[] v1, double[] v2) {
+		if (v1.length != v2.length) {
+			throw new IllegalArgumentException(
+					String.format(
+							"Lengths %d and %d do not match for inner product.\n",
+							v1.length,
+							v2.length));
+		}
+		double result = 0;
+		for (int i = 0; i < v1.length; i++) {
+			result += v1[i] * v2[i];
+		}
+		return result;
+	}
+	
+	private static double[] getColumnOfMatrix(double[][] matrix, int colNo) {
+		double[] theColumn = new double[matrix.length];
+		for (int i = 0; i < matrix.length; i++) {
+			theColumn[i] = matrix[i][colNo];
+		}
+		return theColumn;
+	}
+	
+	/** Performs vector scalar multiplication. See description for 3D version. */
+	public static double[] scalarMultiply(double scalar, double[] vector, boolean inline) {
+		return scalarMultiply(scalar, new double[][][]{{ vector }}, inline)[0][0];
+	}
+	
+	/** Performs matrix scalar multiplication. See description for 3D version. */
+	public static double[][] scalarMultiply(double scalar, double[][] matrix, boolean inline) {
+		return scalarMultiply(scalar, new double[][][]{ matrix }, inline)[0];
+	}
+	
+	/**
+	 * Performs tensor (3D matrix) scalar multiplication.
+	 * 
+	 * If inline is true, this method directly mutates the given tensor.
+	 */
+	public static double[][][] scalarMultiply(double scalar, double[][][] tensor, boolean inline) {
 		checkTensorNotNullOrEmpty(tensor);
-		double[][][] result = new double[tensor.length][tensor[0].length][tensor[0][0].length];
+		double[][][] result = inline
+				? tensor
+				: new double[tensor.length][tensor[0].length][tensor[0][0].length];
 		for (int i = 0; i < tensor.length; i++) {
 			for (int j = 0; j < tensor[i].length; j++) {
 				for (int k = 0; k < tensor[i][j].length; k++) {
@@ -22,12 +76,41 @@ public final class Util {
 		return result;
 	}
 	
-	/** Performs t1 + t2. */
-	public static double[][][] tensorAdd(double[][][] t1, double[][][] t2) {
+	/** Performs v1 - v2 (for vectors). See description for 3D version. */
+	public static double[] tensorSubtract(double[] v1, double[] v2, boolean inline) {
+		return tensorSubtract(new double[][][] {{ v1 }}, new double[][][]{{ v2 }}, inline)[0][0];
+	}
+	
+	/** Performs m1 - m2 (for matrices). See description for 3D version. */
+	public static double[][] tensorSubtract(double[][] m1, double[][] m2, boolean inline) {
+		return tensorSubtract(new double[][][]{ m1 }, new double[][][]{ m2 }, inline)[0];
+	}
+	
+	/** Performs t1 - t2 (for 3D tensors). See description for 3D tensorAdd. */
+	public static double[][][] tensorSubtract(double[][][] t1, double[][][] t2, boolean inline) {
+		return tensorAdd(t1, scalarMultiply(-1, t2, inline), inline);
+	}
+	
+	/** Performs v1 + v2 (for vectors). See description for 3D version. */
+	public static double[] tensorAdd(double[] v1, double[] v2, boolean inline) {
+		return tensorAdd(new double[][][]{{ v1 }}, new double[][][]{{ v2 }}, inline)[0][0];
+	}
+	
+	/** Performs m1 + m2 (for matrices). See description for 3D version. */
+	public static double[][] tensorAdd(double[][] m1, double[][] m2, boolean inline) {
+		return tensorAdd(new double[][][]{ m1 }, new double[][][]{ m2 }, inline)[0];
+	}
+	
+	/**
+	 * Performs t1 + t2 (for 3D tensors).
+	 * 
+	 * If inline is true, this method directly mutates t1.
+	 */
+	public static double[][][] tensorAdd(double[][][] t1, double[][][] t2, boolean inline) {
 		checkTensorNotNullOrEmpty(t1);
 		checkTensorNotNullOrEmpty(t2);
 		checkTensorDimensionsMatch(t1, t2);
-		double[][][] result = new double[t1.length][t1[0].length][t1[0][0].length];
+		double[][][] result = inline ? t1 : new double[t1.length][t1[0].length][t1[0][0].length];
 		for (int i = 0; i < result.length; i++) {
 			for (int j = 0; j < result[i].length; j++) {
 				for (int k = 0; k < result[i][j].length; k++) {
@@ -38,9 +121,23 @@ public final class Util {
 		return result;
 	}
 	
-	/** Performs t1 - t2. */
-	public static double[][][] tensorSubtract(double[][][] t1, double[][][] t2) {
-		return tensorAdd(t1, scalarMultiply(-1, t2));
+	/** Verifies that the matrix is not null and that both dimensions have length > 0. */
+	private static void checkMatrixNotNullOrEmpty(double[][] matrix) {
+		checkNotNull(matrix, "Matrix arg");
+		checkPositive(matrix.length, "Matrix rows", false);
+		checkPositive(matrix[0].length, "Matrix columns", false);
+	}
+	
+	private static void checkMatrixDimensionsAlignForMult(double[][] m1, double[][] m2) {
+		if (m1[0].length != m2.length) {
+			throw new IllegalArgumentException(
+					String.format(
+							"Matrix dimenions %dx%d and %dx%d do not align for multiplication.\n",
+							m1.length,
+							m1[0].length,
+							m2.length,
+							m2[0].length));
+		}
 	}
 	
 	public static double[][] matrixAdd(double[][] m1, double[][] m2) {
@@ -49,7 +146,7 @@ public final class Util {
 	
 
 	/** Verifies that the tensor is not null and that all 3 dimensions have length > 0. */
-	public static void checkTensorNotNullOrEmpty(double[][][] tensor) {
+	private static void checkTensorNotNullOrEmpty(double[][][] tensor) {
 		checkNotNull(tensor, "Tensor arg");
 		checkPositive(tensor.length, "Tensor dimension 1", false);
 		checkPositive(tensor[0].length, "Tensor dimension 2", false);
@@ -57,7 +154,7 @@ public final class Util {
 	}
 	
 	/** Verifies that the tensors have the same dimensions. */
-	public static void checkTensorDimensionsMatch(double[][][] t1, double[][][] t2) {
+	private static void checkTensorDimensionsMatch(double[][][] t1, double[][][] t2) {
 		if (t1.length != t2.length 
 				|| t1[0].length != t2[0].length
 				|| t1[0][0].length != t2[0][0].length) {

@@ -1,8 +1,8 @@
-package v2;
-
-/** Simple sanity checks for problematic methods. */
-public class Test {
-	public static void main(String[] args) {
+//package v2;
+//
+///** Simple sanity checks for problematic methods. */
+//public class Test {
+//	public static void main(String[] args) {
 //		double[][][] data = new double[][][]{
 //			 {{1.0, 2.0, 3.0},
 //			  {4.0, 5.0, 6.0},
@@ -14,23 +14,11 @@ public class Test {
 //		System.out.println(thePlate);
 //		System.out.println(thePlate.rot180());
 //		System.out.println(thePlate.maxPool(2, 2));
-//
-//		// Test util functions.
-//		System.out.println(new Plate(Util.tensorAdd(data, data)));
-//		System.out.println(new Plate(Util.tensorSubtract(data, data)));
-//		System.out.println(new Plate(Util.scalarMultiply(3, data)));
 //		
-// Test convolution. Example taken from below:
-// https://www.researchgate.net/figure/282997080_fig11_Figure-11-An-example-of-matrix-convolution
+//		// Test convolution. Example taken from below:
+//		// https://www.researchgate.net/figure/282997080_fig11_Figure-11-An-example-of-matrix-convolution
 //		Plate img = new Plate(new double[][][]{
 //			// Channel 1. 
-//			{{22, 15, 1, 3, 60},
-//			 {42, 5, 38, 39, 7},
-//			 {28, 9, 4, 66, 79},
-//			 {0, 82, 45, 12, 17},
-//			 {99, 14, 72, 51, 3}},
-//			 
-//			 // Channel 2.
 //			{{22, 15, 1, 3, 60},
 //			 {42, 5, 38, 39, 7},
 //			 {28, 9, 4, 66, 79},
@@ -60,27 +48,21 @@ public class Test {
 //		});
 //		System.out.println(Arrays.toString(pleaseFlattenMe.as1DArray()));
 //		
-//		Instance instance = new Instance(new int[][][] {
-//			// Channel 1. 
-//			{{22, 15, 1, 3, 60},
-//			 {42, 5, 38, 39, 7},
-//			 {28, 9, 4, 66, 79},
-//			 {0, 82, 45, 12, 17},
-//			 {99, 14, 72, 51, 3}},
-//			 
-//			// Channel 2.
-//			{{22, 15, 1, 3, 60},
-//			 {42, 5, 38, 39, 7},
-//			 {28, 9, 4, 66, 79},
-//			 {0, 82, 45, 12, 17},
-//			 {99, 14, 72, 51, 3}},
-//			
-//			// Channel 3.
-//			{{22, 15, 1, 3, 60},
-//			 {42, 5, 38, 39, 7},
-//			 {28, 9, 4, 66, 79},
-//			 {0, 82, 45, 12, 17},
-//			 {99, 14, 72, 51, 3}},
-//		}, "watch");
-	}
-}
+//		// Test tensor functions.
+//		System.out.println(new Plate(Util.tensorAdd(data, data, false)));
+//		System.out.println(new Plate(Util.tensorSubtract(data, data, false)));
+//		System.out.println(new Plate(Util.scalarMultiply(3, data, false)));
+//		
+//		// Test matrix functions.
+//		// Example taken from http://www.mathportal.org/linear-algebra/matrices/matrix-operations.php
+//		double[][] m1 = new double[][] {
+//			{1, 2, 3}
+//		};
+//		double[][] m2 = new double[][] {
+//			{2, 1, 3},
+//			{3, 3, 2},
+//			{4, 1, 2}
+//		};
+//		System.out.println(new Plate(new double[][][]{ Util.matrixMultiply(m1, m2) }));
+//	}
+//}
