@@ -5,7 +5,8 @@ import java.util.Random;
 
 /** Utility methods and objects used throughout the network. */
 public final class Util {
-	public static final Random RNG = new Random();
+	public static final int SEED = 0;
+	public static final Random RNG = new Random(SEED);
 	
 	/** Performs tensor (3D matrix) scalar multiplication. */
 	public static double[][][] scalarMultiply(double scalar, double[][][] tensor) {
