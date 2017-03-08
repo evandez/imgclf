@@ -86,18 +86,15 @@ public class ConvolutionLayer implements PlateLayer {
 	public static class Builder {
 		private int convolutionHeight = 0;
 		private int convolutionWidth = 0;
-		private int convolutionChannels = 0;
 		private int numConvolutions = 0;
 		
 		private Builder() {}
 
-		public Builder setConvolutionSize(int height, int width, int channels) {
+		public Builder setConvolutionSize(int height, int width) {
 			checkPositive(height, "Convolution height", false);
 			checkPositive(width, "Convolution width", false);
-			checkPositive(channels, "Convolution channels", false);
 			this.convolutionHeight = height;
 			this.convolutionWidth = width;
-			this.convolutionChannels = channels;
 			return this;
 		}
 		
@@ -110,28 +107,22 @@ public class ConvolutionLayer implements PlateLayer {
 		public ConvolutionLayer build() {
 			checkPositive(convolutionHeight, "Convolution height", true);
 			checkPositive(convolutionWidth, "Convolution width", true);
-			checkPositive(convolutionChannels, "Convolution channels", true);
 			checkPositive(numConvolutions, "Number of convolutions", true);
 			List<Plate> convolutions = new ArrayList<>();
 			for (int i = 0; i < numConvolutions; i++) {
 				convolutions.add(
 						new Plate(
-								createRandomConvolution(
-										convolutionChannels,
-										convolutionHeight,
-										convolutionWidth)));
+								createRandomConvolution(convolutionHeight, convolutionWidth)));
 			}
 			return new ConvolutionLayer(convolutions);
 		}
 		
 		// TODO: We should probably use the initialization method suggested by Judy.
-		private static double[][][] createRandomConvolution(int channels, int height, int width) {
-			double[][][] plateValues = new double[channels][height][width];
-			for (int i = 0; i < plateValues.length; i++) {
-				for (int j = 0; j < plateValues[i].length; j++) {
-					for (int k = 0; k < plateValues[i][j].length; k++) {
-						plateValues[i][j][k] = Util.RNG.nextGaussian();
-					}
+		private static double[][][] createRandomConvolution(int height, int width) {
+			double[][][] plateValues = new double[1 /* single channel */][height][width];
+			for (int i = 0; i < plateValues[0].length; i++) {
+				for (int j = 0; j < plateValues[0][i].length; j++) {
+					plateValues[0][i][j] = Util.RNG.nextGaussian();
 				}
 			}
 			return plateValues;

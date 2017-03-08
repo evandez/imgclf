@@ -48,11 +48,7 @@ public class Plate {
 	 * The returned plate has the same size as this one.
 	 */
 	public Plate convolve(Plate mask) {
-		if (getNumChannels() != mask.getNumChannels()) {
-			throw new IllegalArgumentException("Mask must have same number of channels as plate.");
-		} else if (getHeight() < mask.getHeight() || getWidth() < mask.getWidth()) {
-			throw new IllegalArgumentException("Mask must be smaller than plate.");
-		}
+		checkValidMask(mask);
 		double[][][] result = new double[getNumChannels()][getHeight()][getWidth()];
 		for (int chan = 0; chan < getNumChannels(); chan++) {
 			for (int i = 0; i < getHeight(); i++) {
@@ -74,10 +70,18 @@ public class Plate {
 						|| neighborY < 0 || neighborY >= getWidth()) {
 					continue;
 				}
-				sum += mask.values[chan][k][l] * values[chan][neighborX][neighborY];
+				sum += mask.values[0][k][l] * values[chan][neighborX][neighborY];
 			}
 		}
 		return sum;
+	}
+	
+	private void checkValidMask(Plate mask) {
+		if (mask.getNumChannels() != 1) { // Mask must always have exactly 1 channel.
+			throw new IllegalArgumentException("Mask must have same number of channels as plate.");
+		} else if (getHeight() < mask.getHeight() || getWidth() < mask.getWidth()) {
+			throw new IllegalArgumentException("Mask must be smaller than plate.");
+		}
 	}
 	
 	/** Flips each channel by 180 degrees. */
