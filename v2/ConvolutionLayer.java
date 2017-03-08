@@ -59,7 +59,7 @@ public class ConvolutionLayer implements PlateLayer {
 			// convolve each input image, sum the output, add the new plate
 			for (int j = 0; j < numChannels; j++) {
 				masks[j] = convolutions.get(i + j);
-				values = Util.matrixAdd(values, input.get(j).convolve(masks[j]).getVals());
+				Util.tensorAdd(values, input.get(j).convolve(masks[j]).getVals(), true);
 				input.get(j);
 			}
 			output.add((new Plate(values).applyActivation(ActivationFunction.RELU)));
