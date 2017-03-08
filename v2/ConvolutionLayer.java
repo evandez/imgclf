@@ -60,7 +60,7 @@ public class ConvolutionLayer implements PlateLayer {
 		if (errors.size() != previousOutput.size() || previousInput.isEmpty()) {
 			throw new IllegalArgumentException("Bad propagation state.");
 		}
-		
+
 		// TODO: Implement this method.
 		return null;
 	}
