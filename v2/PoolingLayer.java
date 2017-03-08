@@ -14,6 +14,7 @@ import java.util.List;
 public class PoolingLayer implements PlateLayer {
 	private final int windowHeight;
 	private final int windowWidth;
+	// quite similar to a plate, except its booleans so more memory efficient
 	private boolean[][][] maximumOfWindow;
 
 	private PoolingLayer(int windowHeight, int windowWidth) {
