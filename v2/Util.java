@@ -140,11 +140,6 @@ public final class Util {
 		}
 	}
 	
-	public static double[][] matrixAdd(double[][] m1, double[][] m2) {
-		return tensorAdd(new double[][][] {m1}, new double[][][] {m2})[0];
-	}
-	
-
 	/** Verifies that the tensor is not null and that all 3 dimensions have length > 0. */
 	private static void checkTensorNotNullOrEmpty(double[][][] tensor) {
 		checkNotNull(tensor, "Tensor arg");
