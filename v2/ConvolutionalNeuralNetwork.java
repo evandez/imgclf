@@ -122,7 +122,7 @@ public class ConvolutionalNeuralNetwork {
 	 */
 	private double[] computeOutput(Instance img) {
 		// Pass the input through the plate layers first.
-		List<Plate> plates = Arrays.asList(new Plate[]{ instanceToPlate(img) });
+		List<Plate> plates = Arrays.asList(instanceToPlate(img));
 		for (PlateLayer layer : plateLayers) {
 			plates = layer.computeOutput(plates);
 		}
@@ -169,16 +169,16 @@ public class ConvolutionalNeuralNetwork {
 		return correctOutput;
 	}
 	
-	private Plate instanceToPlate(Instance instance) {
+	private Plate[] instanceToPlate(Instance instance) {
 		if (useRGB) {
-			return new Plate(new double[][][]{
-				intImgToDoubleImg(instance.getRedChannel()),
-				intImgToDoubleImg(instance.getGreenChannel()),
-				intImgToDoubleImg(instance.getBlueChannel()),
-				intImgToDoubleImg(instance.getGrayImage())
-			});
+			return new Plate[] {
+					new Plate(intImgToDoubleImg(instance.getRedChannel())),
+					new Plate(intImgToDoubleImg(instance.getBlueChannel())),
+					new Plate(intImgToDoubleImg(instance.getGreenChannel())),
+					new Plate(intImgToDoubleImg(instance.getGrayImage())),
+			};
 		} else {
-			return new Plate(new double[][][]{ intImgToDoubleImg(instance.getGrayImage()) });
+			return new Plate[] {new Plate(intImgToDoubleImg(instance.getGrayImage()))};
 		}
 	}
 	
@@ -318,8 +318,8 @@ public class ConvolutionalNeuralNetwork {
 			// imageHeight * imageWidth, which is what we need in that case.
 			int outputHeight = inputHeight;
 			int outputWidth = inputWidth;
-			int outputChannels = useRGB ? 4 : 1;
-			int numOutputs = 1;
+			int outputChannels = (useRGB) ? 4 : 1;
+			int numOutputs = ((ConvolutionLayer)plateLayers.get(0)).numConvolutions();
 			for (PlateLayer plateLayer : plateLayers) {
 				outputHeight = plateLayer.calculateOutputHeight(outputHeight);
 				outputWidth = plateLayer.calculateOutputWidth(outputWidth);
@@ -332,7 +332,7 @@ public class ConvolutionalNeuralNetwork {
 			// TODO: Make the fully-connected activation function a parameter.
 			fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
 					.setActivationFunction(ActivationFunction.RELU)
-					.setNumInputs(outputWidth * outputHeight * outputChannels * numOutputs)
+					.setNumInputs(outputWidth * outputHeight * numOutputs)
 					.setNumNodes(fullyConnectedWidth)
 					.build());
 			

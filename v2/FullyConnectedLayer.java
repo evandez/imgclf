@@ -20,7 +20,7 @@ public class FullyConnectedLayer {
 
 	private FullyConnectedLayer(double[][] weights, ActivationFunction activation) {
 		this.weights = weights;
-		this.lastOutput = new double[weights[0].length]; // TODO: Is this correct?
+		this.lastOutput = new double[weights.length]; 
 		this.activation = activation;
 	}
 

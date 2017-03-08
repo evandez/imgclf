@@ -40,6 +40,26 @@ public class Instance {
 			}
 		}
 	}
+	
+	public Instance(int[][][] image, String label) {
+		this.label = label;
+		height = image[0].length;
+		width = image[0][0].length;
+		
+		red_channel = image[0];
+		green_channel = image[1];
+		blue_channel = image[2];
+		if (image.length == 4) {
+			gray_image = image[3];
+		} else {
+			gray_image = new int[height][width];
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+					gray_image[i][j] = (image[0][i][j] + image[1][i][j] + image[2][i][j]) / 3;
+				}
+			}
+		}
+	}
 
 	// get separate red channel image
 	public int[][] getRedChannel() {

@@ -139,7 +139,7 @@ public final class Util {
 							m2[0].length));
 		}
 	}
-
+	
 	/** Verifies that the tensor is not null and that all 3 dimensions have length > 0. */
 	private static void checkTensorNotNullOrEmpty(double[][][] tensor) {
 		checkNotNull(tensor, "Tensor arg");
@@ -213,4 +213,20 @@ public final class Util {
 			}
 		}
 	}
+	
+	public static void printMemory() {
+		// Get current size of heap in bytes
+		long heapSize = Runtime.getRuntime().totalMemory(); 
+
+		// Get amount of free memory within the heap in bytes. This size will increase // after garbage collection and decrease as new objects are created.
+		long heapFreeSize = Runtime.getRuntime().freeMemory(); 
+
+		// Get maximum size of heap in bytes. The heap cannot grow beyond this size.// Any attempt will result in an OutOfMemoryException.
+		long heapMaxSize = Runtime.getRuntime().maxMemory();
+		
+		System.out.println("\nCurrent Heap Size: " + heapSize / Math.pow(2,20) + " MB");
+		System.out.println("Free Heap Size   : " + heapFreeSize / Math.pow(2, 20) + " MB");
+		System.out.println("Max Heap Size    : " + heapMaxSize / Math.pow(2, 20) + " MB");
+	}
+
 }

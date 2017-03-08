@@ -562,6 +562,10 @@ public class Lab3 {
 						.setNumConvolutions(20)
 						.build())
 				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).build())
+				.appendConvolutionLayer(ConvolutionLayer.newBuilder()
+						.setConvolutionSize(1, 3, 3)
+						.setNumConvolutions(20)
+						.build())
 				.setFullyConnectedDepth(1) // i.e., one hidden layer.
 				.setFullyConnectedWidth(300)
 				.setClasses(categoryNames)
@@ -575,10 +579,10 @@ public class Lab3 {
 
 		System.out.println("******\tDeep CNN training has begun."
 				+ " Updates will be provided after each epoch.\t******");
-		//cnn.train(trainSet, tuneSet, true);
+		cnn.train(trainSet, tuneSet, true);
 		
 		System.out.println("******\tDeep CNN testing has begun.\t******");
-		//cnn.test(testSet, true);
+		System.out.println(cnn.test(testSet, true) + "% accuracy");
 		return 0;
 	}
 

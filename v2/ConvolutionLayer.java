@@ -9,29 +9,39 @@ import java.util.List;
 
 /** A layer that performs n convolutions. Uses ReLU for activation. */
 public class ConvolutionLayer implements PlateLayer {
+	/** 
+	 * Convolutions are laid out RGBG RGBG RGBG ... if numChannels = 4
+	 * or X X X ... if numChannels = 1
+	 */
 	private final List<Plate> convolutions;
 	private final List<Plate> previousInput;
 	private final List<Plate> previousOutput;
+	private int numChannels;
 	
-	private ConvolutionLayer(List<Plate> convolutions) {
+	private ConvolutionLayer(List<Plate> convolutions, int numChannels) {
 		this.convolutions = convolutions;
+		this.numChannels = numChannels;
 		this.previousInput = new ArrayList<>();
 		this.previousOutput = new ArrayList<>();
 	}
 
+	public int numConvolutions() {
+		return convolutions.size();
+	}
+	
 	@Override
 	public int calculateNumOutputs(int numInputs) {
-		return numInputs * convolutions.size();
+		return numInputs / numChannels;// * convolutions.size();
 	}
 	
 	@Override
 	public int calculateOutputHeight(int inputHeight) {
-		return inputHeight;
+		return inputHeight - convolutions.get(0).getHeight() + 1;
 	}
 	
 	@Override
 	public int calculateOutputWidth(int inputWidth) {
-		return inputWidth;
+		return inputWidth - convolutions.get(0).getWidth() + 1;
 	}
 
 	@Override
@@ -41,17 +51,25 @@ public class ConvolutionLayer implements PlateLayer {
 		
 		// Convolve each input with each mask.
 		List<Plate> output = new ArrayList<>();
-		for (Plate mask : convolutions) {
-			for (Plate inputPlate : input) {
-				output.add(inputPlate.convolve(mask));
+		Plate[] masks = new Plate[numChannels];
+		int maskHeight = convolutions.get(0).getHeight();
+		int maskWidth = convolutions.get(0).getWidth();
+		for (int i = 0; i < convolutions.size(); i += numChannels) {
+			double[][] values = new double[input.get(0).getHeight() - maskHeight + 1][input.get(0).getWidth() - maskWidth + 1];
+			// convolve each input image, sum the output, add the new plate
+			for (int j = 0; j < numChannels; j++) {
+				masks[j] = convolutions.get(i + j);
+				Util.tensorAdd(values, input.get(j).convolve(masks[j]).getVals(), true);
+				input.get(j);
 			}
+			output.add((new Plate(values).applyActivation(ActivationFunction.RELU)));
 		}
 		
 		// Activate each output.
-		for (Plate inputPlate : input) {
-			output.add(inputPlate.applyActivation(ActivationFunction.RELU));
-		}
-		
+		//		for (Plate inputPlate : input) {
+		//			output.add(inputPlate.applyActivation(ActivationFunction.RELU));
+		//		}
+
 		return output;
 	}
 	
@@ -71,7 +89,7 @@ public class ConvolutionLayer implements PlateLayer {
 		builder.append("\n------\tConvolution Layer\t------\n\n");
 		builder.append(String.format(
 				"Convolution Size: %dx%dx%d\n",
-				convolutions.get(0).getNumChannels(),
+				numChannels,
 				convolutions.get(0).getHeight(),
 				convolutions.get(0).getWidth()));
 		builder.append(String.format("Number of convolutions: %d\n", convolutions.size()));
@@ -114,21 +132,21 @@ public class ConvolutionLayer implements PlateLayer {
 			checkPositive(numConvolutions, "Number of convolutions", true);
 			List<Plate> convolutions = new ArrayList<>();
 			for (int i = 0; i < numConvolutions; i++) {
-				convolutions.add(
-						new Plate(
-								createRandomConvolution(numChannels, convolutionHeight, convolutionWidth)));
+				for (int j = 0; j < numChannels; j++) {
+					convolutions.add(
+							new Plate(
+									createRandomConvolution(convolutionHeight, convolutionWidth)));
+				}
 			}
-			return new ConvolutionLayer(convolutions);
+			return new ConvolutionLayer(convolutions, numChannels);
 		}
 		
 		// TODO: We should probably use the initialization method suggested by Judy.
-		private static double[][][] createRandomConvolution(int numChannels, int height, int width) {
-			double[][][] plateValues = new double[numChannels][height][width];
+		private static double[][] createRandomConvolution(int height, int width) {
+			double[][] plateValues = new double[height][width];
 			for (int i = 0; i < plateValues.length; i++) {
 				for (int j = 0; j < plateValues[i].length; j++) {
-					for (int k = 0; k < plateValues[i][j].length; k++) {
-						plateValues[i][j][k] = Util.RNG.nextGaussian();
-					}
+					plateValues[i][j] = Util.RNG.nextGaussian();
 				}
 			}
 			return plateValues;
