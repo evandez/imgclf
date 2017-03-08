@@ -579,7 +579,7 @@ public class Lab3 {
 
 		System.out.println("******\tDeep CNN training has begun."
 				+ " Updates will be provided after each epoch.\t******");
-//		cnn.train(trainSet, tuneSet, true);
+		cnn.train(trainSet, tuneSet, true);
 		
 		System.out.println("******\tDeep CNN testing has begun.\t******");
 		System.out.println(cnn.test(testSet, true) + "% accuracy");

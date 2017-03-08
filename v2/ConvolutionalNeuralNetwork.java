@@ -262,7 +262,6 @@ public class ConvolutionalNeuralNetwork {
 		private Builder appendPlateLayer(PlateLayer layer) {
 			checkNotNull(layer, "Plate layer");
 			this.plateLayers.add(layer);
-			Util.printMemory();
 			return this;
 		}
 		
@@ -319,7 +318,7 @@ public class ConvolutionalNeuralNetwork {
 			// imageHeight * imageWidth, which is what we need in that case.
 			int outputHeight = inputHeight;
 			int outputWidth = inputWidth;
-			int outputChannels = 1;
+			int outputChannels = (useRGB) ? 4 : 1;
 			int numOutputs = ((ConvolutionLayer)plateLayers.get(0)).numConvolutions();
 			for (PlateLayer plateLayer : plateLayers) {
 				outputHeight = plateLayer.calculateOutputHeight(outputHeight);
@@ -331,13 +330,13 @@ public class ConvolutionalNeuralNetwork {
 			
 			// Always have at least one hidden layer - add it first.
 			// TODO: Make the fully-connected activation function a parameter.
+			System.out.println(outputWidth + "x"+ outputHeight + ": " + numOutputs);
 			fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
 					.setActivationFunction(ActivationFunction.RELU)
-					.setNumInputs(outputWidth * outputHeight * outputChannels * numOutputs)
+					.setNumInputs(outputWidth * outputHeight * numOutputs)
 					.setNumNodes(fullyConnectedWidth)
 					.build());
 			
-			Util.printMemory();
 			// Add the other hidden layers.
 			for (int i = 0; i < fullyConnectedDepth - 1; i++) {
 				fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()

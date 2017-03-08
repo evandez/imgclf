@@ -20,13 +20,14 @@ public class FullyConnectedLayer {
 
 	private FullyConnectedLayer(double[][] weights, ActivationFunction activation) {
 		this.weights = weights;
-		this.lastOutput = new double[weights[0].length]; // TODO: Is this correct?
+		this.lastOutput = new double[weights.length]; 
 		this.activation = activation;
 	}
 
 	/** Compute the output of the given input vector. */
 	public double[] computeOutput(double[] input) {
 		if (input.length != weights[0].length) {
+			System.out.println(input.length + " " + weights[0].length + " " + weights.length);
 			throw new IllegalArgumentException(
 					"Input length must match layer input specification.");
 		}
