@@ -1,3 +1,4 @@
+package v1;
 public class HiddenLayer extends Layer{
 	public int numHidden;
 	

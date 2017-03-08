@@ -2,11 +2,18 @@ package v2;
 
 import static v2.Util.checkNotNull;
 import static v2.Util.checkPositive;
+import static v2.Util.checkValueInRange;
 
 /** Represents something image-like. */
 public class Plate {
 	private final double[][][] values;
 	
+	/**
+	 * Constructs a new plate for the given values. 
+	 * 
+	 * IMPORTANT: The values should be organized so that the dimensions follow the
+	 * pattern of (channels, height, width).
+	 */
 	public Plate(double[][][] values) {
 		checkNotNull(values, "Plate values");
 		checkPositive(values.length, "Plate channels", false);
@@ -27,19 +34,21 @@ public class Plate {
 	/** Returns the total number of values in the plate. */
 	public int getTotalNumValues() { return getNumChannels() * getHeight() * getWidth(); }
 	
-	public double[][][] getValues() { return values; }
-	
+	/** Returns the value at the given channel, row, and column. */
+	public double valueAt(int chan, int row, int col) {
+		checkValueInRange(chan, 0, getNumChannels(), "Channel index");
+		checkValueInRange(row, 0, getHeight(), "Row index");
+		checkValueInRange(col, 0, getWidth(), "Column index");
+		return values[chan][row][col];
+	}
+
 	/**
 	 * Returns the result of convolving the given mask with this plate.
 	 * 
 	 * The returned plate has the same size as this one.
 	 */
 	public Plate convolve(Plate mask) {
-		if (getNumChannels() != mask.getNumChannels()) {
-			throw new IllegalArgumentException("Mask must have same number of channels as plate.");
-		} else if (getHeight() < mask.getHeight() || getWidth() < mask.getWidth()) {
-			throw new IllegalArgumentException("Mask must be smaller than plate.");
-		}
+		checkValidMask(mask);
 		double[][][] result = new double[getNumChannels()][getHeight()][getWidth()];
 		for (int chan = 0; chan < getNumChannels(); chan++) {
 			for (int i = 0; i < getHeight(); i++) {
@@ -61,10 +70,18 @@ public class Plate {
 						|| neighborY < 0 || neighborY >= getWidth()) {
 					continue;
 				}
-				sum += mask.values[chan][k][l] * values[chan][neighborX][neighborY];
+				sum += mask.values[0][k][l] * values[chan][neighborX][neighborY];
 			}
 		}
 		return sum;
+	}
+	
+	private void checkValidMask(Plate mask) {
+		if (mask.getNumChannels() != 1) { // Mask must always have exactly 1 channel.
+			throw new IllegalArgumentException("Mask must have same number of channels as plate.");
+		} else if (getHeight() < mask.getHeight() || getWidth() < mask.getWidth()) {
+			throw new IllegalArgumentException("Mask must be smaller than plate.");
+		}
 	}
 	
 	/** Flips each channel by 180 degrees. */
@@ -82,6 +99,8 @@ public class Plate {
 	
 	/** Returns the max-pooled plate. No overlap between each pool. */
 	public Plate maxPool(int windowHeight, int windowWidth) {
+		checkValueInRange(windowHeight, 0, getHeight(), "Max pool window height");
+		checkValueInRange(windowWidth, 0, getWidth(), "Max pool window width");
 		int resultHeight = getHeight() / windowHeight;
 		int resultWidth = getWidth() / windowWidth;
 		resultHeight += getHeight() % windowHeight == 0 ? 0 : 1;

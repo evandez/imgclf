@@ -67,6 +67,17 @@ public final class Util {
 		}
 	}
 	
+	/**
+	 * Verifies that the value with the given name is in the range [min, max).
+	 */
+	public static void checkValueInRange(int val, int min, int max, String name) {
+		if (val < min || val >= max) {
+			throw new IllegalArgumentException(
+					String.format(
+							"%s was %d, but should be in range [%d, %d)", name, val, min, max));
+		}
+	}
+	
 	/** Verifies that the object with the given name is not null. */
 	public static void checkNotNull(Object obj, String name) {
 		if (obj == null) {
