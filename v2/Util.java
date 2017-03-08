@@ -42,6 +42,11 @@ public final class Util {
 	public static double[][][] tensorSubtract(double[][][] t1, double[][][] t2) {
 		return tensorAdd(t1, scalarMultiply(-1, t2));
 	}
+	
+	public static double[][] matrixAdd(double[][] m1, double[][] m2) {
+		return tensorAdd(new double[][][] {m1}, new double[][][] {m2})[0];
+	}
+	
 
 	/** Verifies that the tensor is not null and that all 3 dimensions have length > 0. */
 	public static void checkTensorNotNullOrEmpty(double[][][] tensor) {
@@ -116,4 +121,20 @@ public final class Util {
 			}
 		}
 	}
+	
+	public static void printMemory() {
+		// Get current size of heap in bytes
+		long heapSize = Runtime.getRuntime().totalMemory(); 
+
+		// Get amount of free memory within the heap in bytes. This size will increase // after garbage collection and decrease as new objects are created.
+		long heapFreeSize = Runtime.getRuntime().freeMemory(); 
+
+		// Get maximum size of heap in bytes. The heap cannot grow beyond this size.// Any attempt will result in an OutOfMemoryException.
+		long heapMaxSize = Runtime.getRuntime().maxMemory();
+		
+		System.out.println("\nCurrent Heap Size: " + heapSize / Math.pow(2,20) + " MB");
+		System.out.println("Free Heap Size   : " + heapFreeSize / Math.pow(2, 20) + " MB");
+		System.out.println("Max Heap Size    : " + heapMaxSize / Math.pow(2, 20) + " MB");
+	}
+
 }

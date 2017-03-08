@@ -22,6 +22,8 @@ public class FullyConnectedLayer {
 	/** Compute the output of the given input vector. */
 	public double[] computeOutput(double[] input) {
 		if (input.length != weights[0].length) { // Valid check because we enforce > 0 inputs.
+			System.out.println(input.length + " vs. " + weights[0].length);
+			System.out.println(weights.length);
 			throw new IllegalArgumentException(
 					"Input length must match layer input specification.");
 		}
@@ -34,6 +36,7 @@ public class FullyConnectedLayer {
 			// TODO: Add offset.
 			outputs[i] = activation.apply(sum);
 		}
+		
 		return outputs;
 	}
 

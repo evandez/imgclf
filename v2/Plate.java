@@ -6,7 +6,7 @@ import static v2.Util.checkValueInRange;
 
 /** Represents something image-like. */
 public class Plate {
-	private final double[][][] values;
+	private double[][] values;
 	
 	/**
 	 * Constructs a new plate for the given values. 
@@ -14,32 +14,35 @@ public class Plate {
 	 * IMPORTANT: The values should be organized so that the dimensions follow the
 	 * pattern of (channels, height, width).
 	 */
-	public Plate(double[][][] values) {
+	public Plate(double[][] values) {
 		checkNotNull(values, "Plate values");
-		checkPositive(values.length, "Plate channels", false);
-		checkPositive(values[0].length, "Plate height", false);
-		checkPositive(values[0][0].length, "Plate width", false);
+		checkPositive(values.length, "Plate height", false);
+		checkPositive(values[0].length, "Plate width", false);
 		this.values = values;
 	}
 
-	/** Returns the number of channels in the plate. */
-	public int getNumChannels() { return values.length; }
-	
 	/** Returns the height of each channel. */
-	public int getHeight() { return values[0].length; }
+	public int getHeight() { return values.length; }
 	
 	/** Returns the width of each channel. */
-	public int getWidth() { return values[0][0].length; }
+	public int getWidth() { return values[0].length; }
 	
 	/** Returns the total number of values in the plate. */
-	public int getTotalNumValues() { return getNumChannels() * getHeight() * getWidth(); }
+	public int getTotalNumValues() { return getHeight() * getWidth(); }
+	
+	public double[][] getVals() {
+		return values;
+	}
+	
+	public void setVals(double[][] newVals) {
+		this.values = newVals;
+	}
 	
 	/** Returns the value at the given channel, row, and column. */
-	public double valueAt(int chan, int row, int col) {
-		checkValueInRange(chan, 0, getNumChannels(), "Channel index");
+	public double valueAt( int row, int col) {
 		checkValueInRange(row, 0, getHeight(), "Row index");
 		checkValueInRange(col, 0, getWidth(), "Column index");
-		return values[chan][row][col];
+		return values[row][col];
 	}
 
 	/**
@@ -49,18 +52,18 @@ public class Plate {
 	 */
 	public Plate convolve(Plate mask) {
 		checkValidMask(mask);
-		double[][][] result = new double[getNumChannels()][getHeight()][getWidth()];
-		for (int chan = 0; chan < getNumChannels(); chan++) {
-			for (int i = 0; i < getHeight(); i++) {
-				for (int j = 0; j < getWidth(); j++) {
-					result[chan][i][j] = convolvePixelIJ(mask, chan, i, j);
-				}
+		int maskHeight = mask.getHeight();
+		int maskWidth = mask.getWidth();
+		double[][] result = new double[getHeight() - maskHeight + 1][getWidth() - maskWidth + 1];
+		for (int i = 0; i < result.length; i++) {
+			for (int j = 0; j < result[i].length; j++) {
+				result[i][j] = convolvePixelIJ(mask, i + maskHeight / 2, j + maskWidth / 2);
 			}
 		}
 		return new Plate(result);
 	}
 	
-	private double convolvePixelIJ(Plate mask, int chan, int i, int j) {
+	private double convolvePixelIJ(Plate mask, int i, int j) {
 		double sum = 0.0;
 		for (int k = 0; k < mask.getHeight(); k++) {
 			for (int l = 0; l < mask.getWidth(); l++) {
@@ -70,28 +73,24 @@ public class Plate {
 						|| neighborY < 0 || neighborY >= getWidth()) {
 					continue;
 				}
-				sum += mask.values[0][k][l] * values[chan][neighborX][neighborY];
+				sum += mask.values[k][l] * values[neighborX][neighborY];
 			}
 		}
 		return sum;
 	}
 	
 	private void checkValidMask(Plate mask) {
-		if (mask.getNumChannels() != 1) { // Mask must always have exactly 1 channel.
-			throw new IllegalArgumentException("Mask must have same number of channels as plate.");
-		} else if (getHeight() < mask.getHeight() || getWidth() < mask.getWidth()) {
+		if (getHeight() < mask.getHeight() || getWidth() < mask.getWidth()) {
 			throw new IllegalArgumentException("Mask must be smaller than plate.");
 		}
 	}
 	
 	/** Flips each channel by 180 degrees. */
 	public Plate rot180() {
-		double[][][] result = new double[getNumChannels()][getHeight()][getWidth()];
-		for (int chan = 0; chan < getNumChannels(); chan++) {
-			for (int i = 0; i < getHeight(); i++) {
-				for (int j = 0; j < getWidth(); j++) {
-					result[chan][i][j] = values[chan][getHeight()-1-i][getWidth()-1-j];
-				}
+		double[][] result = new double[getHeight()][getWidth()];
+		for (int i = 0; i < getHeight(); i++) {
+			for (int j = 0; j < getWidth(); j++) {
+				result[i][j] = values[getHeight()-1-i][getWidth()-1-j];
 			}
 		}
 		return new Plate(result);
@@ -106,33 +105,30 @@ public class Plate {
 		resultHeight += getHeight() % windowHeight == 0 ? 0 : 1;
 		resultWidth += getWidth() % windowWidth == 0 ? 0 : 1;
 		
-		double[][][] result = new double[getNumChannels()][resultHeight][resultWidth];
-		for (int chan = 0; chan < getNumChannels(); chan++) {
-			for (int i = 0; i < result[chan].length; i++) {
-				for (int j = 0; j < result[chan][i].length; j++) {
-					int windowStartI = Math.min(i * windowHeight, getHeight() - 1);
-					int windowStartJ = Math.min(j * windowWidth, getWidth() - 1);
-					result[chan][i][j] =
-							maxValInWindow(
-									chan,
-									windowStartI,
-									windowStartJ,
-									windowHeight,
-									windowWidth);
-				}
- 			}
+		double[][] result = new double[resultHeight][resultWidth];
+		for (int i = 0; i < result.length; i++) {
+			for (int j = 0; j < result[i].length; j++) {
+				int windowStartI = Math.min(i * windowHeight, getHeight() - 1);
+				int windowStartJ = Math.min(j * windowWidth, getWidth() - 1);
+				result[i][j] =
+						maxValInWindow(
+								windowStartI,
+								windowStartJ,
+								windowHeight,
+								windowWidth);
+			}
 		}
 		return new Plate(result);
 	}
 	
 	private double maxValInWindow(
-			int chan, int windowStartI, int windowStartJ, int windowHeight, int windowWidth) {
+			int windowStartI, int windowStartJ, int windowHeight, int windowWidth) {
 		double max = Double.MIN_VALUE;
 		int windowEndI = Math.min(windowStartI + windowHeight - 1, getHeight() - 1);
 		int windowEndJ = Math.min(windowStartJ + windowWidth - 1, getWidth() - 1);
 		for (int i = windowStartI; i <= windowEndI; i++) {
 			for (int j = windowStartJ; j <= windowEndJ; j++) {
-				max = Math.max(max, values[chan][i][j]);
+				max = Math.max(max, values[i][j]);
 			}
 		}
 		return max;
@@ -141,12 +137,10 @@ public class Plate {
 	/** Applies the activation function to all values in the plate. */
 	public Plate applyActivation(ActivationFunction func) {
 		checkNotNull(func, "Activation function");
-		double[][][] output = new double[getNumChannels()][getHeight()][getWidth()];
-		for (int chan = 0; chan < getNumChannels(); chan++) {
-			for (int i = 0; i < getHeight(); i++) {
-				for (int j = 0; j < getWidth(); j++) {
-					output[chan][i][j] = func.apply(values[chan][i][j]);
-				}
+		double[][] output = new double[getHeight()][getWidth()];
+		for (int i = 0; i < getHeight(); i++) {
+			for (int j = 0; j < getWidth(); j++) {
+				output[i][j] = func.apply(values[i][j]);
 			}
 		}
 		return new Plate(output);
@@ -155,15 +149,13 @@ public class Plate {
 	/** Pack this plate into a 1D array, channel by channel, row by row. */
 	public double[] as1DArray() {
 		double[] result = new double[getTotalNumValues()];
-		for (int chan = 0; chan < getNumChannels(); chan++) {
-			for (int row = 0; row < getHeight(); row++) {
-				System.arraycopy(
-						values[chan][row],
-						0 /* Copy the whole row! */,
-						result,
-						chan * getHeight() * getWidth() + row * getWidth(),
-						getWidth());
-			}
+		for (int row = 0; row < getHeight(); row++) {
+			System.arraycopy(
+					values[row],
+					0 /* Copy the whole row! */,
+					result,
+					row * getWidth(),
+					getWidth());
 		}
 		return result;
 	}
@@ -173,20 +165,16 @@ public class Plate {
 		StringBuilder builder = new StringBuilder();
 		builder.append(
 				String.format(
-						"Plate with dimensions %dx%dx%d:\n",
+						"Plate with dimensions %dx%d:\n",
 						getHeight(),
-						getWidth(),
-						getNumChannels()));
-		for (int chan = 0; chan < getNumChannels(); chan++) {
-			builder.append(String.format("chan %d = [\n", chan));
-			for (int i = 0; i < getHeight(); i++) {
-				for (int j = 0; j < getWidth(); j++) {
-					builder.append(String.format("%f, ", values[chan][i][j]));
-				}
-				builder.append("\n");
+						getWidth()));
+		for (int i = 0; i < getHeight(); i++) {
+			for (int j = 0; j < getWidth(); j++) {
+				builder.append(String.format("%f, ", values[i][j]));
 			}
-			builder.append("]\n");
+			builder.append("\n");
 		}
+		builder.append("]\n");
 		return builder.toString();
 	}
 }
