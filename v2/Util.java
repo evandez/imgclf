@@ -5,7 +5,8 @@ import java.util.Random;
 
 /** Utility methods and objects used throughout the network. */
 public final class Util {
-	public static final Random RNG = new Random();
+	public static final int SEED = 0;
+	public static final Random RNG = new Random(SEED);
 	
 	/** Performs m1 * m2, assuming that m1 has dimensions (m, k) and m2 (k, n). */
 	public static double[][] matrixMultiply(double[][] m1, double[][] m2) {

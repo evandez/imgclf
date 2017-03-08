@@ -14,6 +14,7 @@ import java.util.List;
 public class PoolingLayer implements PlateLayer {
 	private final int windowHeight;
 	private final int windowWidth;
+	// quite similar to a plate, except its booleans so more memory efficient
 	private boolean[][][] maximumOfWindow;
 
 	private PoolingLayer(int windowHeight, int windowWidth) {
@@ -58,19 +59,19 @@ public class PoolingLayer implements PlateLayer {
 	public List<Plate> propagateError(List<Plate> gradients, double learningRate) {
 		// TODO: Reuse memory.
 		List<Plate> output = new ArrayList<Plate>(gradients.size());
-		for (Plate errorPlate : gradients) {
-			double[][][] upscaledValues = new double[maximumOfWindow.length][maximumOfWindow[0].length][maximumOfWindow[0][0].length];
-			for (int i = 0; i < maximumOfWindow.length; i++) {
-				for (int j = 0; j < maximumOfWindow[i].length; j++) {
-					for (int k = 0; k < maximumOfWindow[i][j].length; k++) {
-						// gradient is either copied from upper layer or zero - Ran Manor's answer at
-						// https://www.quora.com/In-neural-networks-how-does-backpropagation-get-carried-through-maxpool-layers
-						upscaledValues[i][j][k] = maximumOfWindow[i][j][k]
-								? errorPlate.valueAt(i, j / windowHeight, k / windowWidth)
-								: 0;
-					}
+		for (int i = 0; i < gradients.size(); i++) {
+			Plate errorPlate = gradients.get(i);
+			double[][][] upscaledValues = new double[1][maximumOfWindow[0].length][maximumOfWindow[0][0].length];
+			for (int j = 0; j < maximumOfWindow[i].length; j++) {
+				for (int k = 0; k < maximumOfWindow[i][j].length; k++) {
+					// gradient is either copied from upper layer or zero - Ran Manor's answer at
+					// https://www.quora.com/In-neural-networks-how-does-backpropagation-get-carried-through-maxpool-layers
+					upscaledValues[0][j][k] = maximumOfWindow[i][j][k]
+							? errorPlate.valueAt(0, j / windowHeight, k / windowWidth)
+							: 0;
 				}
 			}
+			output.add(new Plate(upscaledValues));
 		}
 		return output;
 	}
