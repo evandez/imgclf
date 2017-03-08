@@ -330,7 +330,6 @@ public class ConvolutionalNeuralNetwork {
 			
 			// Always have at least one hidden layer - add it first.
 			// TODO: Make the fully-connected activation function a parameter.
-			System.out.println(outputWidth + "x"+ outputHeight + ": " + numOutputs);
 			fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
 					.setActivationFunction(ActivationFunction.RELU)
 					.setNumInputs(outputWidth * outputHeight * numOutputs)

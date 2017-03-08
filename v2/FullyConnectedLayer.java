@@ -27,7 +27,6 @@ public class FullyConnectedLayer {
 	/** Compute the output of the given input vector. */
 	public double[] computeOutput(double[] input) {
 		if (input.length != weights[0].length) {
-			System.out.println(input.length + " " + weights[0].length + " " + weights.length);
 			throw new IllegalArgumentException(
 					"Input length must match layer input specification.");
 		}
