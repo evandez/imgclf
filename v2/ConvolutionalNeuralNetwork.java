@@ -46,7 +46,7 @@ public class ConvolutionalNeuralNetwork {
 		double prevAccuracy = 0.0;
 		double currAccuracy = 0.0;
 		for (int epoch = 0; epoch < maxEpochs; epoch++) {
-			trainUntilEpoch(trainSet);
+			trainSingleEpoch(trainSet);
 			currAccuracy = test(tuneSet, false);
 			
 			if (verbose) {
@@ -60,7 +60,7 @@ public class ConvolutionalNeuralNetwork {
 	}
 
 	/** Passes all images in the dataset through the network and backpropagates the errors. */
-	private void trainUntilEpoch(Dataset trainSet) {
+	private void trainSingleEpoch(Dataset trainSet) {
 		for (Instance img : trainSet.getImages()) {
 			double[] output = computeOutput(img);
 			
@@ -214,7 +214,12 @@ public class ConvolutionalNeuralNetwork {
 	/** Unpack the 1D double array into a list of plates (3D double tensors). */
 	private static List<Plate> unpackPlates(double[] packedPlates) {
 		// TODO: Implement this method.
-		return null;
+        List<Plate> plates = new ArrayList<>();
+        for (int i = 0; i < packedPlates.length; i++) {
+            // TODO: Need to get the size of each plate to create list
+
+        }
+        return plates;
 	}
 	
 	/** Returns a new builder. */
