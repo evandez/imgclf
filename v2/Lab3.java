@@ -540,7 +540,7 @@ public class Lab3 {
 		cnn.train(trainSet, tuneSet, true);
 		
 		System.out.println("******\tSingle-HU CNN testing has begun.\t******");
-		//cnn.test(testSet, true);		
+		cnn.test(testSet, true);		
 		return 0;
 	}
 

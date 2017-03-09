@@ -56,7 +56,11 @@ public class ConvolutionalNeuralNetwork {
 			currAccuracy = test(tuneSet, false);
 			
 			if (verbose) {
-				System.out.printf("Epoch %d completed with tune accuracy of %.9f\n", epoch, currAccuracy);
+				System.out.printf(
+						"Epoch %d completed with train accuracy of %.9f and tune accuracy of %.9f\n",
+						epoch,
+						test(trainSet, false),
+						currAccuracy);
 			}
 
 			if (currAccuracy < prevAccuracy && epoch >= minEpochs) {
@@ -72,12 +76,6 @@ public class ConvolutionalNeuralNetwork {
 		for (Instance img : trainSet.getImages()) {
 			// First, forward propagate.
 			double[] output = computeOutput(img);
-			
-//			for (int i = 0; i < 6; i++) {
-//				System.out.print(output[i] + ", ");
-//			}
-//			System.out.println();
-			
 			double[] correctOutput = labelToOneOfN(img.getLabel());
 			
 			// Compute initial deltas.
