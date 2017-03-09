@@ -12,7 +12,7 @@ public class Plate {
 	 * Constructs a new plate for the given values. 
 	 * 
 	 * IMPORTANT: The values should be organized so that the dimensions follow the
-	 * pattern of (channels, height, width).
+	 * pattern of (height, width).
 	 */
 	public Plate(double[][] values) {
 		checkNotNull(values, "Plate values");

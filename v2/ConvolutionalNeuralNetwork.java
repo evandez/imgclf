@@ -3,6 +3,7 @@ package v2;
 import static v2.Util.checkNotEmpty;
 import static v2.Util.checkNotNull;
 import static v2.Util.checkPositive;
+import static v2.Util.tensorSubtract;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,12 +46,12 @@ public class ConvolutionalNeuralNetwork {
 	public void train(Dataset trainSet, Dataset tuneSet, boolean verbose) {
 		double prevAccuracy = 0.0;
 		double currAccuracy = 0.0;
-		for (int epoch = 0; epoch < maxEpochs; epoch++) {
+		for (int epoch = 1; epoch <= maxEpochs; epoch++) {
 			trainSingleEpoch(trainSet);
 			currAccuracy = test(tuneSet, false);
 			
 			if (verbose) {
-				System.out.printf("Epoch %d completed with tune accuracy of %.5f\n", epoch, currAccuracy);
+				System.out.printf("Epoch %d completed with tune accuracy of %.9f\n", epoch, currAccuracy);
 			}
 
 			if (currAccuracy < prevAccuracy) {
@@ -62,22 +63,25 @@ public class ConvolutionalNeuralNetwork {
 	/** Passes all images in the dataset through the network and backpropagates the errors. */
 	private void trainSingleEpoch(Dataset trainSet) {
 		for (Instance img : trainSet.getImages()) {
+			// First, forward propagate.
 			double[] output = computeOutput(img);
-			
-			// First, propagate error through fully connected layers.
+
+			// Compute initial deltas.
 			double[] fcError = labelToOneOfN(img.getLabel());
+			tensorSubtract(output, fcError, true);
 			for (int i = 0; i < fcError.length; i++) {
-				fcError[i] -= output[i];
+				fcError[i] *= ActivationFunction.SIGMOID.applyDerivative(fcError[i]);
 			}
 			
-			for (FullyConnectedLayer layer : fullyConnectedLayers) {
-				fcError = layer.propagateError(fcError, learningRate);
+			// Then, propagate error through fully connected layers.
+			for (int i = fullyConnectedLayers.size() - 1; i >= 0; i--) {
+				fcError = fullyConnectedLayers.get(i).propagateError(fcError, learningRate);
 			}
-			
-			// Then, propagate error through plate layers.
+
+			// Finally, propagate error through plate layers.
 			List<Plate> plateErrors = unpackPlates(fcError);
-			for (PlateLayer layer : plateLayers) {
-				plateErrors = layer.propagateError(plateErrors, learningRate);
+			for (int i = plateLayers.size() - 1; i >= 0; i--) {
+				plateErrors = plateLayers.get(i).propagateError(plateErrors, learningRate);
 			}
 		}
 	}
@@ -186,7 +190,7 @@ public class ConvolutionalNeuralNetwork {
 		double[][] dblImg = new double[intImg.length][intImg[0].length];
 		for (int i = 0; i < dblImg.length; i++) {
 			for (int j = 0; j < dblImg[i].length; j++) {
-				dblImg[i][j] = (255 - intImg[i][j]) / 255;
+				dblImg[i][j] = ((double) 255 - intImg[i][j]) / 255;
 			}
 		}
 		return dblImg;
@@ -233,6 +237,7 @@ public class ConvolutionalNeuralNetwork {
 		private int inputWidth = 0;
 		private int fullyConnectedWidth = 0;
 		private int fullyConnectedDepth = 0;
+		private ActivationFunction fcActivation = null;
 		private int maxEpochs = 0;
 		private double learningRate = 0;
 		private boolean useRGB = true;
@@ -277,6 +282,12 @@ public class ConvolutionalNeuralNetwork {
 			return this;
 		}
 		
+		public Builder setFullyConnectedActivationFunction(ActivationFunction fcActivation) {
+			checkNotNull(fcActivation, "Fully connected activation function");
+			this.fcActivation = fcActivation;
+			return this;
+		}
+		
 		public Builder setClasses(List<String> classes) {
 			checkNotNull(classes, "Classes");
 			checkNotEmpty(classes, "Classes", false);
@@ -308,6 +319,7 @@ public class ConvolutionalNeuralNetwork {
 			checkPositive(inputWidth, "Input width", true);
 			checkPositive(fullyConnectedWidth, "Fully connected width", true);
 			checkPositive(fullyConnectedDepth, "Fully connected depth", true);
+			checkNotNull(fcActivation, "Fully connected activation function");
 			checkPositive(maxEpochs, "Max epochs", true);
 			checkPositive(learningRate, "Learning rate", true);
 			// No check for useRGB. Just default to true.
@@ -318,8 +330,7 @@ public class ConvolutionalNeuralNetwork {
 			// imageHeight * imageWidth, which is what we need in that case.
 			int outputHeight = inputHeight;
 			int outputWidth = inputWidth;
-			int outputChannels = (useRGB) ? 4 : 1;
-			int numOutputs = ((ConvolutionLayer)plateLayers.get(0)).numConvolutions();
+			int numOutputs = useRGB ? 4 : 1; // First layer will receive 4 "images" if RGB used
 			for (PlateLayer plateLayer : plateLayers) {
 				outputHeight = plateLayer.calculateOutputHeight(outputHeight);
 				outputWidth = plateLayer.calculateOutputWidth(outputWidth);
@@ -331,7 +342,7 @@ public class ConvolutionalNeuralNetwork {
 			// Always have at least one hidden layer - add it first.
 			// TODO: Make the fully-connected activation function a parameter.
 			fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
-					.setActivationFunction(ActivationFunction.RELU)
+					.setActivationFunction(fcActivation)
 					.setNumInputs(outputWidth * outputHeight * numOutputs)
 					.setNumNodes(fullyConnectedWidth)
 					.build());
@@ -339,7 +350,7 @@ public class ConvolutionalNeuralNetwork {
 			// Add the other hidden layers.
 			for (int i = 0; i < fullyConnectedDepth - 1; i++) {
 				fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
-						.setActivationFunction(ActivationFunction.RELU)
+						.setActivationFunction(fcActivation)
 						.setNumInputs(fullyConnectedWidth)
 						.setNumNodes(fullyConnectedWidth)
 						.build());

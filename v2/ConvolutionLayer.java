@@ -31,7 +31,7 @@ public class ConvolutionLayer implements PlateLayer {
 	
 	@Override
 	public int calculateNumOutputs(int numInputs) {
-		return numInputs / numChannels;// * convolutions.size();
+		return numInputs / numChannels;
 	}
 	
 	@Override
@@ -64,12 +64,6 @@ public class ConvolutionLayer implements PlateLayer {
 			}
 			output.add((new Plate(values).applyActivation(ActivationFunction.RELU)));
 		}
-		
-		// Activate each output.
-		//		for (Plate inputPlate : input) {
-		//			output.add(inputPlate.applyActivation(ActivationFunction.RELU));
-		//		}
-
 		return output;
 	}
 	
@@ -111,7 +105,7 @@ public class ConvolutionLayer implements PlateLayer {
 		private Builder() {}
 
 		public Builder setConvolutionSize(int numChannels, int height, int width) {
-			checkPositive(numChannels, "Number of channels", false);
+			checkPositive(numChannels, "Convolution channels", false);
 			checkPositive(height, "Convolution height", false);
 			checkPositive(width, "Convolution width", false);
 			this.numChannels = numChannels;
@@ -127,6 +121,7 @@ public class ConvolutionLayer implements PlateLayer {
 		}
 		
 		public ConvolutionLayer build() {
+			checkPositive(numChannels, "Convolution channels", true);
 			checkPositive(convolutionHeight, "Convolution height", true);
 			checkPositive(convolutionWidth, "Convolution width", true);
 			checkPositive(numConvolutions, "Number of convolutions", true);

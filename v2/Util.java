@@ -8,15 +8,14 @@ public final class Util {
 	public static final int SEED = 0;
 	public static final Random RNG = new Random(SEED);
 	
-	/** Performs m1 * m2, assuming that m1 has dimensions (m, k) and m2 (k, n). */
-	public static double[][] matrixMultiply(double[][] m1, double[][] m2) {
-		checkMatrixNotNullOrEmpty(m1);
-		checkMatrixNotNullOrEmpty(m2);
-		checkMatrixDimensionsAlignForMult(m1, m2);
-		double[][] result = new double[m1.length][m2[0].length];
+	/** Performs v1 * v2^T. */
+	public static double[][] outerProduct(double[] v1, double[] v2) {
+		checkVectorNotNullOrEmpty(v1);
+		checkVectorNotNullOrEmpty(v2);
+		double[][] result = new double[v1.length][v2.length];
 		for (int i = 0; i < result.length; i++) {
 			for (int j = 0; j < result[i].length; j++) {
-				result[i][j] = innerProduct(m1[i], getColumnOfMatrix(m2, j));
+				result[i][j] = v1[i] * v2[j];
 			}
 		}
 		return result;
@@ -24,26 +23,14 @@ public final class Util {
 	
 	/** Computes the inner product of two vectors. */
 	public static double innerProduct(double[] v1, double[] v2) {
-		if (v1.length != v2.length) {
-			throw new IllegalArgumentException(
-					String.format(
-							"Lengths %d and %d do not match for inner product.\n",
-							v1.length,
-							v2.length));
-		}
+		checkVectorNotNullOrEmpty(v1);
+		checkVectorNotNullOrEmpty(v2);
+		checkVectorDimensionsMatch(v1, v2);
 		double result = 0;
 		for (int i = 0; i < v1.length; i++) {
 			result += v1[i] * v2[i];
 		}
 		return result;
-	}
-	
-	private static double[] getColumnOfMatrix(double[][] matrix, int colNo) {
-		double[] theColumn = new double[matrix.length];
-		for (int i = 0; i < matrix.length; i++) {
-			theColumn[i] = matrix[i][colNo];
-		}
-		return theColumn;
 	}
 	
 	/** Performs vector scalar multiplication. See description for 3D version. */
@@ -121,22 +108,18 @@ public final class Util {
 		return result;
 	}
 	
-	/** Verifies that the matrix is not null and that both dimensions have length > 0. */
-	private static void checkMatrixNotNullOrEmpty(double[][] matrix) {
-		checkNotNull(matrix, "Matrix arg");
-		checkPositive(matrix.length, "Matrix rows", false);
-		checkPositive(matrix[0].length, "Matrix columns", false);
+	private static void checkVectorNotNullOrEmpty(double[] vector) {
+		checkNotNull(vector, "Vector arg");
+		checkPositive(vector.length, "Vector length", false);
 	}
 	
-	private static void checkMatrixDimensionsAlignForMult(double[][] m1, double[][] m2) {
-		if (m1[0].length != m2.length) {
+	private static void checkVectorDimensionsMatch(double[] v1, double[] v2) {
+		if (v1.length != v2.length) {
 			throw new IllegalArgumentException(
 					String.format(
-							"Matrix dimenions %dx%d and %dx%d do not align for multiplication.\n",
-							m1.length,
-							m1[0].length,
-							m2.length,
-							m2[0].length));
+							"Lengths %d and %d do not match for inner product.\n",
+							v1.length,
+							v2.length));
 		}
 	}
 	

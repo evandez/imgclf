@@ -57,7 +57,7 @@ public class Lab3 {
 
 	// Should be one of { "perceptrons", "oneLayer", "deep" }; You might want to use this if you are trying approaches
 	// other than a Deep ANN.
-	private static String modelToUse = "deep";
+	private static String modelToUse = "oneLayer";
 
 	// The provided code uses a 1D vector of input features. You might want to create a 2D version for your Depp ANN
 	// code. Or use the get2DfeatureValue() 'accessor function' that maps 2D coordinates into the 1D vector. The last
@@ -524,6 +524,7 @@ public class Lab3 {
 				.setInputWidth(imageSize)
 				.setFullyConnectedDepth(1)
 				.setFullyConnectedWidth(300)
+				.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
 				.setClasses(categoryNames)
 				.setLearningRate(eta)
 				.setMaxEpochs(maxEpochs)
@@ -534,7 +535,7 @@ public class Lab3 {
 		
 		System.out.println("******\tSingle-HU CNN training has begun."
 				+ " Updates will be provided after each epoch.\t******");
-		//cnn.train(trainSet, tuneSet, true);
+		cnn.train(trainSet, tuneSet, true);
 		
 		System.out.println("******\tSingle-HU CNN testing has begun.\t******");
 		//cnn.test(testSet, true);		
@@ -568,6 +569,7 @@ public class Lab3 {
 						.build())
 				.setFullyConnectedDepth(1) // i.e., one hidden layer.
 				.setFullyConnectedWidth(300)
+				.setFullyConnectedActivationFunction(ActivationFunction.RELU)
 				.setClasses(categoryNames)
 				.setMaxEpochs(maxEpochs)
 				.setLearningRate(eta)
@@ -579,10 +581,10 @@ public class Lab3 {
 
 		System.out.println("******\tDeep CNN training has begun."
 				+ " Updates will be provided after each epoch.\t******");
-		cnn.train(trainSet, tuneSet, true);
+//		cnn.train(trainSet, tuneSet, true);
 		
 		System.out.println("******\tDeep CNN testing has begun.\t******");
-		System.out.println(cnn.test(testSet, true) + "% accuracy");
+//		System.out.println(cnn.test(testSet, true) + "% accuracy");
 		return 0;
 	}
 
