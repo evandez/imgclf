@@ -6,8 +6,6 @@ import static v2.Util.outerProduct;
 import static v2.Util.scalarMultiply;
 import static v2.Util.tensorSubtract;
 
-import java.util.Arrays;
-
 /** 
  * Your standard fully-connected ANN.
  * 
@@ -28,22 +26,26 @@ public class FullyConnectedLayer {
 		this.lastInput = new double[weights[0].length];
 		this.lastOutput = new double[weights.length];
 		this.activation = activation;
+		
+		// Set the last value to be the offset. This will never change.
+		this.lastInput[this.lastInput.length - 1] = -1;
 	}
 
 	/** Compute the output of the given input vector. */
 	public double[] computeOutput(double[] input) {
-		if (input.length != lastInput.length) {
+		if (input.length != lastInput.length - 	1) {
 			throw new IllegalArgumentException(
 					String.format(
 							"Input length in fully connected layer was %d, should be %d.",
 							input.length,
 							lastInput.length));
 		}
+		
 		System.arraycopy(input, 0, lastInput, 0, input.length);
 		for (int i = 0; i < lastOutput.length; i++) {
 			double sum = 0;
-			for (int j = 0; j < weights[i].length; j++) {
-				sum += weights[i][j] * input[j];
+			for (int j = 0; j < lastInput.length; j++) {
+				sum += weights[i][j] * lastInput[j];
 			}
 			lastOutput[i] = activation.apply(sum);
 		}
@@ -56,14 +58,18 @@ public class FullyConnectedLayer {
 	 */
 	public double[] propagateError(double[] proppedDelta, double learningRate) {
 		if (proppedDelta.length != weights.length) {
-			throw new IllegalArgumentException("Bad propragation in fully connected layer!");
+			throw new IllegalArgumentException(
+					String.format(
+							"Got length %d delta, expected length %d!",
+							proppedDelta.length,
+							weights.length));
 		}
 		
 		// Compute deltas for the next layer.
-		double[] delta = new double[weights[0].length];
+		double[] delta = new double[weights[0].length - 1]; // Don't count the offset here.
 		for (int j = 0; j < delta.length; j++) {
 			for (int i = 0; i < weights.length; i++) {
-				delta[j] += proppedDelta[i] * weights[i][j] * activation.applyDerivative(lastOutput[i]);
+				delta[j] += proppedDelta[i] * weights[i][j] * activation.applyDerivative(lastInput[j]);
 			}
 		}
 		
@@ -82,7 +88,8 @@ public class FullyConnectedLayer {
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("\n------\tFully Connected Layer\t------\n\n");
-		builder.append(String.format("Number of inputs: %d\n", weights[0].length));
+		builder.append(
+				String.format("Number of inputs: %d (plus a bias)\n", weights[0].length - 1));
 		builder.append(String.format("Number of nodes: %d\n", weights.length));
 		builder.append(String.format("Activation function: %s\n", activation.toString()));
 		builder.append("\n\t------------\t\n");
@@ -122,11 +129,10 @@ public class FullyConnectedLayer {
 			checkNotNull(func, "Fully connected activation function");
 			checkPositive(numInputs, "Number of fully connected inputs", true);
 			checkPositive(numNodes, "Number of fully connected nodes", true);
-			double[][] weights = new double[numNodes][numInputs];
+			double[][] weights = new double[numNodes][numInputs + 1];
 			for (int i = 0; i < weights.length; i++) {
 				for (int j = 0; j < weights[i].length; j++) {
-					// TODO: Use Judy's weight initialization.
-					weights[i][j] = Util.RNG.nextGaussian();
+					weights[i][j] = Lab3.getRandomWeight(numInputs, numNodes);
 				}
 			}
 			return new FullyConnectedLayer(weights, func);

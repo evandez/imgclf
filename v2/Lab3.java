@@ -65,9 +65,10 @@ public class Lab3 {
 	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
-	private static double eta = 0.1, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
+	private static double eta = 0.01, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
+	private static int minEpochs = 50;
 	private static int maxEpochs = 2000;
 	
 	private static int MAX_INSTANCES = 30;
@@ -198,7 +199,7 @@ public class Lab3 {
 		throw new Error("Unknown category: " + name);
 	}
 
-	private static double getRandomWeight(int fanin, int fanout) {
+	public static double getRandomWeight(int fanin, int fanout) {
 		// This is one 'rule of thumb' for initializing weights. Fine for perceptrons and one-layer ANN at least.
 		double range = Math.max(Double.MIN_VALUE, 4.0 / Math.sqrt(6.0 * (fanin + fanout)));
 		return (2.0 * random() - 1.0) * range;
@@ -527,6 +528,7 @@ public class Lab3 {
 				.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
 				.setClasses(categoryNames)
 				.setLearningRate(eta)
+				.setMinEpochs(minEpochs)
 				.setMaxEpochs(maxEpochs)
 				.build();
 		System.out.println("******\tSingle-HU CNN constructed."
@@ -571,6 +573,7 @@ public class Lab3 {
 				.setFullyConnectedWidth(300)
 				.setFullyConnectedActivationFunction(ActivationFunction.RELU)
 				.setClasses(categoryNames)
+				.setMinEpochs(minEpochs)
 				.setMaxEpochs(maxEpochs)
 				.setLearningRate(eta)
 				.build();

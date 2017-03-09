@@ -7,6 +7,7 @@ import static v2.Util.tensorSubtract;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -19,6 +20,7 @@ public class ConvolutionalNeuralNetwork {
 	private final List<PlateLayer> plateLayers;
 	private final List<FullyConnectedLayer> fullyConnectedLayers;
 	private final List<String> classes;
+	private final int minEpochs;
 	private final int maxEpochs;
 	private final double learningRate;
 	private final boolean useRGB;
@@ -29,6 +31,7 @@ public class ConvolutionalNeuralNetwork {
 			List<PlateLayer> plateLayers,
 			List<FullyConnectedLayer> fullyConnectedLayers,
 			List<String> classes,
+			int minEpochs,
 			int maxEpochs,
 			double learningRate,
 			boolean useRGB) {
@@ -37,6 +40,7 @@ public class ConvolutionalNeuralNetwork {
 		this.plateLayers = plateLayers;
 		this.fullyConnectedLayers = fullyConnectedLayers;
 		this.classes = classes;
+		this.minEpochs = minEpochs;
 		this.maxEpochs = maxEpochs;
 		this.learningRate = learningRate;
 		this.useRGB = useRGB;
@@ -44,6 +48,7 @@ public class ConvolutionalNeuralNetwork {
 	
 	/** Trains the CNN with the given training data and tuning data. */
 	public void train(Dataset trainSet, Dataset tuneSet, boolean verbose) {
+		Collections.shuffle(trainSet.getImages());
 		double prevAccuracy = 0.0;
 		double currAccuracy = 0.0;
 		for (int epoch = 1; epoch <= maxEpochs; epoch++) {
@@ -54,9 +59,11 @@ public class ConvolutionalNeuralNetwork {
 				System.out.printf("Epoch %d completed with tune accuracy of %.9f\n", epoch, currAccuracy);
 			}
 
-			if (currAccuracy < prevAccuracy) {
+			if (currAccuracy < prevAccuracy && epoch >= minEpochs) {
 				break;
 			}
+			
+			prevAccuracy = currAccuracy;
 		}
 	}
 
@@ -65,12 +72,18 @@ public class ConvolutionalNeuralNetwork {
 		for (Instance img : trainSet.getImages()) {
 			// First, forward propagate.
 			double[] output = computeOutput(img);
-
+			
+//			for (int i = 0; i < 6; i++) {
+//				System.out.print(output[i] + ", ");
+//			}
+//			System.out.println();
+			
+			double[] correctOutput = labelToOneOfN(img.getLabel());
+			
 			// Compute initial deltas.
-			double[] fcError = labelToOneOfN(img.getLabel());
-			tensorSubtract(output, fcError, true);
+			double[] fcError = tensorSubtract(output, correctOutput, false);
 			for (int i = 0; i < fcError.length; i++) {
-				fcError[i] *= ActivationFunction.SIGMOID.applyDerivative(fcError[i]);
+				fcError[i] *= ActivationFunction.SIGMOID.applyDerivative(output[i]);
 			}
 			
 			// Then, propagate error through fully connected layers.
@@ -238,6 +251,7 @@ public class ConvolutionalNeuralNetwork {
 		private int fullyConnectedWidth = 0;
 		private int fullyConnectedDepth = 0;
 		private ActivationFunction fcActivation = null;
+		private int minEpochs = 0;
 		private int maxEpochs = 0;
 		private double learningRate = 0;
 		private boolean useRGB = true;
@@ -295,6 +309,12 @@ public class ConvolutionalNeuralNetwork {
 			return this;
 		}
 		
+		public Builder setMinEpochs(int minEpochs) {
+			checkPositive(minEpochs, "Min epochs", false);
+			this.minEpochs = minEpochs;
+			return this;
+		}
+		
 		public Builder setMaxEpochs(int maxEpochs) {
 			checkPositive(maxEpochs, "Max epochs", false);
 			this.maxEpochs = maxEpochs;
@@ -320,6 +340,7 @@ public class ConvolutionalNeuralNetwork {
 			checkPositive(fullyConnectedWidth, "Fully connected width", true);
 			checkPositive(fullyConnectedDepth, "Fully connected depth", true);
 			checkNotNull(fcActivation, "Fully connected activation function");
+			checkPositive(minEpochs, "Min epochs", true);
 			checkPositive(maxEpochs, "Max epochs", true);
 			checkPositive(learningRate, "Learning rate", true);
 			// No check for useRGB. Just default to true.
@@ -369,6 +390,7 @@ public class ConvolutionalNeuralNetwork {
 					plateLayers,
 					fullyConnectedLayers,
 					classes,
+					minEpochs,
 					maxEpochs,
 					learningRate,
 					useRGB);
