@@ -47,12 +47,6 @@ public class FullyConnectedLayer {
 			}
 			lastOutput[i] = activation.apply(sum);
 		}
-		
-		for (int i = 0; i < 6; i++) {
-			System.out.print(lastOutput[i] + ", ");
-		}
-		System.out.println();
-		
 		return lastOutput;
 	}
 
