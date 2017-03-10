@@ -1,9 +1,12 @@
 package v2;
 
+import static v2.Util.checkNotEmpty;
+import static v2.Util.checkNotNull;
+import static v2.Util.checkPositive;
+import static v2.Util.tensorAdd;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import static v2.Util.*;
 
 /** A layer that performs n convolutions. Uses ReLU for activation. */
 public class ConvolutionLayer implements PlateLayer {
@@ -12,15 +15,13 @@ public class ConvolutionLayer implements PlateLayer {
 	 * or X X X ... if numChannels = 1
 	 */
 	private final List<Plate> convolutions;
-	private final List<Plate> previousInput;
-	private final List<Plate> previousOutput;
+	private List<Plate> previousInput;
+	private List<Plate> previousOutput;
 	private int numChannels;
 	
 	private ConvolutionLayer(List<Plate> convolutions, int numChannels) {
 		this.convolutions = convolutions;
 		this.numChannels = numChannels;
-		this.previousInput = new ArrayList<>();
-		this.previousOutput = new ArrayList<>();
 	}
 
 	public int numConvolutions() {
@@ -42,11 +43,15 @@ public class ConvolutionLayer implements PlateLayer {
 		return inputWidth - convolutions.get(0).getWidth() + 1;
 	}
 
+	public List<Plate> getConvolutions() {
+		return convolutions;
+	}
+	
 	@Override
 	public List<Plate> computeOutput(List<Plate> input) {
 		checkNotNull(input, "Convolution layer input");
 		checkNotEmpty(input, "Convolution layer input", false);
-		
+		previousInput = input;
 		// Convolve each input with each mask.
 		List<Plate> output = new ArrayList<>();
 		Plate[] masks = new Plate[numChannels];
@@ -57,11 +62,12 @@ public class ConvolutionLayer implements PlateLayer {
 			// convolve each input image, sum the output, add the new plate
 			for (int j = 0; j < numChannels; j++) {
 				masks[j] = convolutions.get(i + j);
-				Util.tensorAdd(values, input.get(j).convolve(masks[j]).getVals(), true);
+				Util.tensorAdd(values, input.get(j).convolve(masks[j]).getValues(), true);
 				input.get(j);
 			}
 			output.add((new Plate(values).applyActivation(ActivationFunction.RELU)));
 		}
+		previousOutput = output;
 		return output;
 	}
 	
@@ -70,27 +76,28 @@ public class ConvolutionLayer implements PlateLayer {
 		if (errors.size() != previousOutput.size() || previousInput.isEmpty()) {
 			throw new IllegalArgumentException("Bad propagation state.");
 		}
-
-        for (int i = 0; i < errors.size(); i++) {
-
-		    // Holds the change in convolution values for plate i
-		    double[][] deltaConvolutions = new double[errors.get(i).getHeight()][errors.get(i).getWidth()];
-
-		    // Loop over the entire plate and update weights (convolution values) using the equation
-            // given in Russel and Norvig (check Lab 3 slides)
-            for (int row = 0; row < errors.get(i).getHeight(); row++)
-                for (int col = 0; col < errors.get(i).getWidth(); col++)
-                    deltaConvolutions[row][col] = errors.get(i).valueAt(row, col)
-                            * ActivationFunction.RELU.applyDerivative(previousInput.get(i).valueAt(row, col))
-                            * previousOutput.get(i).valueAt(row, col)
-                            * convolutions.get(i).valueAt(row, col)
-                            * learningRate;
-
-            // Update convolution values
-            convolutions.get(i).setVals(
-                    tensorAdd(convolutions.get(i).getVals(), deltaConvolutions, false));
-        }
-        return convolutions;
+		
+	   for (int i = 0; i < errors.size(); i++) {
+		   // Holds the change in convolution values for plate i
+		   double[][] deltaConvolutions = new double[errors.get(i).getHeight()][errors.get(i).getWidth()];
+	
+		   // Loop over the entire plate and update weights (convolution values) using the equation
+	      // given in Russel and Norvig (check Lab 3 slides)
+	      for (int row = 0; row < errors.get(i).getHeight(); row++) {
+	         for (int col = 0; col < errors.get(i).getWidth(); col++) {
+	            deltaConvolutions[row][col] = errors.get(i).valueAt(row, col)
+	               * ActivationFunction.RELU.applyDerivative(previousInput.get(i).valueAt(row, col))
+	               * previousOutput.get(i).valueAt(row, col)
+	               * convolutions.get(i).valueAt(row, col)
+	               * learningRate;
+			   }
+			}
+	         // Update convolution values
+	      convolutions.get(i).setVals(
+	         tensorAdd(convolutions.get(i).getValues(), deltaConvolutions, false));
+      }
+      // TODO: I don't think this is right. It just sends back the new convolutions.
+	   return convolutions;
 	}
 
 	@Override
