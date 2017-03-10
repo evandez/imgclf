@@ -539,7 +539,7 @@ public class Lab3 {
 				+ " Updates will be provided after each epoch.\t******");
 		cnn.train(trainSet, tuneSet, true);
 		
-		System.out.println("******\tSingle-HU CNN testing has begun.\t******");
+		System.out.println("\n******\tSingle-HU CNN testing has begun.\t******");
 		cnn.test(testSet, true);		
 		return 0;
 	}
@@ -586,7 +586,7 @@ public class Lab3 {
 				+ " Updates will be provided after each epoch.\t******");
 //		cnn.train(trainSet, tuneSet, true);
 		
-		System.out.println("******\tDeep CNN testing has begun.\t******");
+		System.out.println("\n******\tDeep CNN testing has begun.\t******");
 //		System.out.println(cnn.test(testSet, true) + "% accuracy");
 		return 0;
 	}

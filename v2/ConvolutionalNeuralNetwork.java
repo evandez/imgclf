@@ -114,7 +114,12 @@ public class ConvolutionalNeuralNetwork {
 				System.out.printf("Predicted: %s\t\tActual:%s\n", predicted, img.getLabel());
 			}
 		}
-		return ((double) (testSet.getSize() - errCount)) / testSet.getSize();
+		
+		double accuracy = ((double) (testSet.getSize() - errCount)) / testSet.getSize();
+		if (verbose) {
+			System.out.printf("Final accuracy was %.9f\n", accuracy);
+		}
+		return accuracy;
 	}
 	
 	/** Returns the predicted label for the image. */
