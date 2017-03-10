@@ -58,7 +58,7 @@ public class PoolingLayer implements PlateLayer {
 	@Override
 	public List<Plate> propagateError(List<Plate> gradients, double learningRate) {
 		// TODO: Reuse memory.
-		List<Plate> output = new ArrayList<Plate>(gradients.size());
+		List<Plate> output = new ArrayList<>(gradients.size());
 		for (int i = 0; i < gradients.size(); i++) {
 			Plate errorPlate = gradients.get(i);
 			double[][] upscaledValues = new double[maximumOfWindow[0].length][maximumOfWindow[0][0].length];

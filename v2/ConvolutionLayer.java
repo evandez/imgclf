@@ -1,11 +1,9 @@
 package v2;
 
-import static v2.Util.checkNotEmpty;
-import static v2.Util.checkNotNull;
-import static v2.Util.checkPositive;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import static v2.Util.*;
 
 /** A layer that performs n convolutions. Uses ReLU for activation. */
 public class ConvolutionLayer implements PlateLayer {
@@ -73,8 +71,26 @@ public class ConvolutionLayer implements PlateLayer {
 			throw new IllegalArgumentException("Bad propagation state.");
 		}
 
-		// TODO: Implement this method.
-		return null;
+        for (int i = 0; i < errors.size(); i++) {
+
+		    // Holds the change in convolution values for plate i
+		    double[][] deltaConvolutions = new double[errors.get(i).getHeight()][errors.get(i).getWidth()];
+
+		    // Loop over the entire plate and update weights (convolution values) using the equation
+            // given in Russel and Norvig (check Lab 3 slides)
+            for (int row = 0; row < errors.get(i).getHeight(); row++)
+                for (int col = 0; col < errors.get(i).getWidth(); col++)
+                    deltaConvolutions[row][col] = errors.get(i).valueAt(row, col)
+                            * ActivationFunction.RELU.applyDerivative(previousInput.get(i).valueAt(row, col))
+                            * previousOutput.get(i).valueAt(row, col)
+                            * convolutions.get(i).valueAt(row, col)
+                            * learningRate;
+
+            // Update convolution values
+            convolutions.get(i).setVals(
+                    tensorAdd(convolutions.get(i).getVals(), deltaConvolutions, false));
+        }
+        return convolutions;
 	}
 
 	@Override

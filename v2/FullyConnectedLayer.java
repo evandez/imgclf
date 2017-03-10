@@ -67,9 +67,9 @@ public class FullyConnectedLayer {
 		
 		// Compute deltas for the next layer.
 		double[] delta = new double[weights[0].length - 1]; // Don't count the offset here.
-		for (int j = 0; j < delta.length; j++) {
-			for (int i = 0; i < weights.length; i++) {
-				delta[j] += proppedDelta[i] * weights[i][j] * activation.applyDerivative(lastInput[j]);
+		for (int i = 0; i < delta.length; i++) {
+			for (int j = 0; j < weights.length; j++) {
+				delta[i] += proppedDelta[j] * weights[j][i] * activation.applyDerivative(lastInput[i]);
 			}
 		}
 		
