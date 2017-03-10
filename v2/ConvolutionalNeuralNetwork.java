@@ -97,8 +97,8 @@ public class ConvolutionalNeuralNetwork {
 						lastPlate.getConvolutions().get(0).getHeight(),
 						lastPlate.getConvolutions().get(0).getWidth());
 				for (int i = plateLayers.size() - 1; i >= 0; i--) {
-					plateErrors = plateLayers.get(i).propagateError(plateErrors, learningRate);
-				}
+                    plateErrors = plateLayers.get(i).propagateError(plateErrors, learningRate);
+                }
 			}
 		}
 	}
