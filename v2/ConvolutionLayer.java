@@ -114,15 +114,19 @@ public class ConvolutionLayer implements PlateLayer {
                 delta[i] = new double[previousInput.get(i).getHeight()][previousInput.get(i).getWidth()];
 
                 for (int row = 0; row <= delta[i].length - convolutions.get(i).getHeight(); row++) {
-                    for (int col = 0; col < delta[i][row].length - convolutions.get(i).getWidth(); col++) {
+                    for (int col = 0; col <= delta[i][row].length - convolutions.get(i).getWidth(); col++) {
                         for (int kernelRow = 0; kernelRow < convolutions.get(i).getHeight(); kernelRow++) {
                             for (int kernelCol = 0; kernelCol < convolutions.get(i).getWidth(); kernelCol++) {
                                 delta[i][row + kernelRow][col + kernelCol] = errors.get(i).valueAt(row, col)
                                         * convolutions.get(i).rot180().valueAt(kernelRow, kernelCol);
                             }
                         }
+                    }
+                }
+
+                for (int row = 0; row < delta[i].length; row++) {
+                    for (int col = 0; col < delta[i][row].length; col++) {
                         delta[i][row][col] *= ActivationFunction.RELU.applyDerivative(previousInput.get(i).valueAt(row, col));
-                        // updateConvolutions[row][col] = delta[i][row][col] * previousInput.get(i).valueAt(row, col) * learningRate;
                     }
                 }
 
