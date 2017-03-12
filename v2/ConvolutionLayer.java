@@ -1,12 +1,9 @@
 package v2;
 
-import static v2.Util.checkNotEmpty;
-import static v2.Util.checkNotNull;
-import static v2.Util.checkPositive;
-import static v2.Util.tensorAdd;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import static v2.Util.*;
 
 /**
  * A layer that performs n convolutions. Uses ReLU for activation.
@@ -78,61 +75,68 @@ public class ConvolutionLayer implements PlateLayer {
         if (errors.size() != previousOutput.size() || previousInput.isEmpty()) {
             throw new IllegalArgumentException("Bad propagation state.");
         }
+
+        // Update the convolution values
+        for (int i = 0; i < previousInput.size(); i++) {
+            double[][] updateConvolutions = scalarMultiply(learningRate, errors.get(i).getValues(), false);
+            // Loop over the plate
+            for (int j = 0; j <= errors.get(i).getHeight() - convolutions.get(i).getHeight(); j++) {
+                for (int k = 0; k <= errors.get(i).getWidth() - convolutions.get(i).getWidth(); k++) {
+                    double[][] update = new double[errors.get(i).getHeight()][errors.get(i).getWidth()];
+                    for (int l = 0; l < convolutions.get(i).getHeight(); l++) {
+                        for (int m = 0; l < convolutions.get(i).getHeight(); l++) {
+                            if (update[j+l][k+m] == 0)
+                                update[j+l][k+m] = 1;
+                            update[j+l][k+m] += previousInput.get(i).valueAt(j+l, k+m);
+                        }
+                    }
+                    updateConvolutions[j][k] *= update[j][k];
+                }
+            }
+            convolutions.get(i).setVals(tensorAdd(convolutions.get(i).getValues(), updateConvolutions, false));
+        }
+
         // Stores the delta values for all the plates in current layer
         List<Plate> deltaOutput = new ArrayList<>(errors.size());
         // Total error
         double[][][] error = new double[errors.size()][][];
         double[][][] delta = new double[error.length][][];
+        if (previousInput.size() == errors.size()) {
+            for (int i = 0; i < errors.size(); i++) {
+                error[i] = new double[previousInput.get(i).getHeight()][previousInput.get(i).getWidth()];
 
-        for (int i = 0; i < errors.size(); i++) {
-            error[i] = new double[previousInput.get(i).getHeight()][previousInput.get(i).getWidth()];
-            /*// Stores the delta values for this plate
-            double[][] deltaConvolutions = new double[errors.get(i).getHeight()][errors.get(i).getWidth()];
-            // Stores the change in convolution values for plate i
-            double[][] updateConvolutions = new double[errors.get(i).getHeight()][errors.get(i).getWidth()];
+                // Stores the delta values for this plate
+                double[][] deltaConvolutions = new double[errors.get(i).getHeight()][errors.get(i).getWidth()];
+                // Stores the change in convolution values for plate i
+                double[][] updateConvolutions = new double[errors.get(i).getHeight()][errors.get(i).getWidth()];
+                // Loop over the entire plate and update weights (convolution values) using the equation
+                // given in Russel and Norvig (check Lab 3 slides)
+                delta[i] = new double[errors.get(i).getHeight()][errors.get(i).getWidth()];
 
-            // Loop over the entire plate and update weights (convolution values) using the equation
-            // given in Russel and Norvig (check Lab 3 slides)
-            for (int row = 0; row < errors.get(i).getHeight(); row++) {
-                for (int col = 0; col < errors.get(i).getWidth(); col++) {
-                    // TODO: Not sure if previousInput and previousOutput should be switched in the equations below
-                    deltaConvolutions[row][col] = errors.get(i).valueAt(row, col)
-                            * ActivationFunction.RELU.applyDerivative(previousOutput.get(i).valueAt(row, col))
-                            * convolutions.get(i).valueAt(row, col);
-                    updateConvolutions[row][col] = deltaConvolutions[row][col]
-                            * previousInput.get(i).valueAt(row, col)
-                            * learningRate;
-                }
-            }*/
-
-            final int WINDOW_WIDTH = convolutions.get(i).getWidth();
-            final int WINDOW_HEIGHT = convolutions.get(i).getHeight();
-            for (int row = 0; row < error[i].length - WINDOW_HEIGHT; row++) {
-                for (int col = 0; col < error[i][row].length - WINDOW_WIDTH; col++) {
-                    for (int kernelRow = 0; kernelRow < WINDOW_HEIGHT; kernelRow++) {
-                        for (int kernelCol = 0; kernelCol < WINDOW_WIDTH; kernelCol++) {
-                            error[i][row + kernelRow][col + kernelCol] += errors.get(i).valueAt(row, col)
-                                    * convolutions.get(i).valueAt(kernelRow, kernelCol);
+                for (int row = 0; row <= delta[i].length - convolutions.get(i).getHeight(); row++) {
+                    for (int col = 0; col < delta[i][row].length - convolutions.get(i).getWidth(); col++) {
+                        for (int kernelRow = 0; kernelRow < convolutions.get(i).getHeight(); kernelRow++) {
+                            for (int kernelCol = 0; kernelCol < convolutions.get(i).getWidth(); kernelCol++) {
+                                delta[i][row + kernelRow][col + kernelCol] = errors.get(i).valueAt(row, col)
+                                        * convolutions.get(i).rot180().valueAt(kernelRow, kernelCol);
+                            }
                         }
+                        delta[i][row][col] *= ActivationFunction.RELU.applyDerivative(previousInput.get(i).valueAt(row, col));
+                        // updateConvolutions[row][col] = delta[i][row][col] * previousInput.get(i).valueAt(row, col) * learningRate;
                     }
                 }
+
+                deltaOutput.add(new Plate(delta[i]));
+                // Update convolution values
+                convolutions.get(i).setVals(
+                        tensorAdd(convolutions.get(i).getValues(), updateConvolutions, false));
+                // Add the delta values to list to be used by previous layer
+                deltaOutput.add(new Plate(deltaConvolutions));
             }
-            delta[i] = new double[error[i].length][error[i][0].length];
-            for (int row = 0; row < error[i].length; row++) {
-                for (int col = 0; col < error[i][row].length; col++) {
-                    delta[i][row][col] += error[i][row][col]
-                            * ActivationFunction.RELU.applyDerivative(previousInput.get(i).valueAt(row, col));
-                }
-            }
-            deltaOutput.add(new Plate(delta[i]));
-            /*// Update convolution values
-            convolutions.get(i).setVals(
-                    tensorAdd(convolutions.get(i).getValues(), updateConvolutions, false));
-            // Add the delta values to list to be used by previous layer
-            deltaOutput.add(new Plate(deltaConvolutions));*/
+            return deltaOutput;
+        } else {
+            return null;
         }
-        // TODO: I think this is what we should be returning but I'm not entirely sure
-        return deltaOutput;
     }
 
     @Override

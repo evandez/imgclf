@@ -13,7 +13,7 @@ import java.util.List;
  * TODO: This implementation does not let you vary stride. In the future, we may want to add that feature.
  */
 public class PoolingLayer implements PlateLayer {
-	private final int windowHeight;
+    private final int windowHeight;
 	private final int windowWidth;
 	// quite similar to a plate, except its booleans so more memory efficient
 	private ArrayList<boolean[][]> maximumOfWindow;
@@ -22,6 +22,14 @@ public class PoolingLayer implements PlateLayer {
 		this.windowHeight = windowHeight;
 		this.windowWidth = windowWidth;
 	}
+
+    public int getWindowHeight() {
+        return windowHeight;
+    }
+
+    public int getWindowWidth() {
+        return windowWidth;
+    }
 
 	@Override
 	public int calculateNumOutputs(int numInputs) {
