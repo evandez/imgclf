@@ -94,8 +94,8 @@ public class ConvolutionalNeuralNetwork {
 				ConvolutionLayer lastPlate = (ConvolutionLayer) plateLayers.get(plateLayers.size() - 1);
 				List<Plate> plateErrors = unpackPlates(
 						fcError,
-						lastPlate.getConvolutions().get(0).get(0).getHeight(),
-						lastPlate.getConvolutions().get(0).get(0).getWidth());
+						lastPlate.getConvolutions().get(0).getHeight(),
+						lastPlate.getConvolutions().get(0).getWidth());
 				for (int i = plateLayers.size() - 1; i >= 0; i--) {
                     plateErrors = plateLayers.get(i).propagateError(plateErrors, learningRate);
                 }
