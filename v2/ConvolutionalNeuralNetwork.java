@@ -385,7 +385,6 @@ public class ConvolutionalNeuralNetwork {
             List<FullyConnectedLayer> fullyConnectedLayers = new ArrayList<>(fullyConnectedDepth);
 
             // Always have at least one hidden layer - add it first.
-            // TODO: Make the fully-connected activation function a parameter.
             int numInputs = outputWidth * outputHeight * numOutputs;
             numInputs = (plateLayers.size() > 0) ? numInputs * ((ConvolutionLayer) plateLayers.get(plateLayers.size() - 1)).getConvolutions().size(): numInputs;
             fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
