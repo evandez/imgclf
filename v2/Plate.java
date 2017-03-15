@@ -30,7 +30,7 @@ public class Plate {
 	/** Returns the total number of values in the plate. */
 	public int getTotalNumValues() { return getHeight() * getWidth(); }
 	
-	public double[][] getVals() {
+	public double[][] getValues() {
 		return values;
 	}
 	
