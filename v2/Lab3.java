@@ -202,7 +202,7 @@ public class Lab3 {
 	public static double getRandomWeight(int fanin, int fanout) {
 		// This is one 'rule of thumb' for initializing weights. Fine for perceptrons and one-layer ANN at least.
 		double range = Math.max(Double.MIN_VALUE, 4.0 / Math.sqrt(6.0 * (fanin + fanout)));
-		return (2.0 * random() - 1.0) * range;
+		return (2.0 * random() - 1.0) * range * 0.01;
 	}
 
 	// Map from 2D coordinates (in pixels) to the 1D fixed-length feature

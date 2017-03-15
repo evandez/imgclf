@@ -117,7 +117,7 @@ public class ConvolutionLayer implements PlateLayer {
                     for (int col = 0; col <= delta[i][row].length - convolutions.get(i).getWidth(); col++) {
                         for (int kernelRow = 0; kernelRow < convolutions.get(i).getHeight(); kernelRow++) {
                             for (int kernelCol = 0; kernelCol < convolutions.get(i).getWidth(); kernelCol++) {
-                                delta[i][row + kernelRow][col + kernelCol] = errors.get(i).valueAt(row, col)
+                                delta[i][row + kernelRow][col + kernelCol] += errors.get(i).valueAt(row, col)
                                         * convolutions.get(i).rot180().valueAt(kernelRow, kernelCol);
                             }
                         }
