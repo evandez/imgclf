@@ -90,6 +90,7 @@ public class ConvolutionalNeuralNetwork {
 			}
 
 			// Finally, propagate error through plate layers.
+<<<<<<< HEAD
 			if (plateLayers.size() > 0) {
 				ConvolutionLayer lastPlate = (ConvolutionLayer) plateLayers.get(plateLayers.size() - 1);
 				List<Plate> plateErrors = unpackPlates(
@@ -99,6 +100,11 @@ public class ConvolutionalNeuralNetwork {
 				for (int i = plateLayers.size() - 1; i >= 0; i--) {
                     plateErrors = plateLayers.get(i).propagateError(plateErrors, learningRate);
                 }
+=======
+			List<Plate> plateErrors = unpackPlates(fcError);
+			for (int i = plateLayers.size() - 1; i >= 0; i--) {
+				plateErrors = plateLayers.get(i).propagateError(plateErrors, learningRate);
+>>>>>>> parent of 63e74f8... Some fixes and changes, prop for Pooling and Conv both wrong
 			}
 		}
 	}
@@ -238,27 +244,12 @@ public class ConvolutionalNeuralNetwork {
 	}
 	
 	/** Unpack the 1D double array into a list of plates (3D double tensors). */
-	private static List<Plate> unpackPlates(double[] packedPlates, int plateHeight, int plateWidth) {
+	private static List<Plate> unpackPlates(double[] packedPlates) {
 		// TODO: Implement this method.
         List<Plate> plates = new ArrayList<>();
-        int k = 0;
-        while (k < packedPlates.length) {
-      	  double[][] unpackedPlate = new double[plateHeight][plateWidth];
-      	  for (int i = 0; i < plateHeight; i++) {
-      		  for (int j = 0; j < plateWidth; j++) {
-      			  if (k < packedPlates.length) {
-      				  unpackedPlate[i][j] = packedPlates[k++];
-      			  } else {
-      				  throw new RuntimeException(
-      						  String.format(
-      								  "Dimensions error. %d values in packedPlates, specified plate dimensions were %dx%d",
-      								  packedPlates.length,
-      								  plateHeight,
-      								  plateWidth));
-      			  }
-      		  }
-      	  }
-      	  plates.add(new Plate(unpackedPlate));
+        for (int i = 0; i < packedPlates.length; i++) {
+            // TODO: Need to get the size of each plate to create list
+
         }
         return plates;
 	}
@@ -386,11 +377,9 @@ public class ConvolutionalNeuralNetwork {
 			
 			// Always have at least one hidden layer - add it first.
 			// TODO: Make the fully-connected activation function a parameter.
-			int numInputs = outputWidth * outputHeight * numOutputs;
-			numInputs = (plateLayers.size() > 0) ? numInputs * ((ConvolutionLayer) plateLayers.get(plateLayers.size() - 1)).getConvolutions().size(): numInputs;
 			fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
 					.setActivationFunction(fcActivation)
-					.setNumInputs(numInputs)
+					.setNumInputs(outputWidth * outputHeight * numOutputs)
 					.setNumNodes(fullyConnectedWidth)
 					.build());
 			

@@ -1,7 +1,6 @@
 package v2;
 
 import static v2.Util.checkPositive;
-import static v2.Util.checkValueInRange;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +15,7 @@ public class PoolingLayer implements PlateLayer {
     private final int windowHeight;
 	private final int windowWidth;
 	// quite similar to a plate, except its booleans so more memory efficient
-	private ArrayList<boolean[][]> maximumOfWindow;
+	private boolean[][][] maximumOfWindow;
 
 	private PoolingLayer(int windowHeight, int windowWidth) {
 		this.windowHeight = windowHeight;
@@ -57,16 +56,9 @@ public class PoolingLayer implements PlateLayer {
 	@Override
 	public List<Plate> computeOutput(List<Plate> input) {
 		// TODO: Reuse memory.
-		if (maximumOfWindow == null) {
-			maximumOfWindow = new ArrayList<>();
-			for (int j = 0; j < input.size(); j++) {
-				maximumOfWindow.add(new boolean[input.get(j).getHeight()][input.get(j).getWidth()]);
-			}
-		}
-		
 		List<Plate> output = new ArrayList<Plate>(input.size());
-		for (int i = 0; i < input.size(); i++) {
-			output.add(maxPool(input.get(i), maximumOfWindow.get(i), windowHeight, windowWidth));
+		for (Plate inputPlate : input) {
+			output.add(inputPlate.maxPool(windowHeight, windowWidth));
 		}
 		return output;
 	}
@@ -77,13 +69,12 @@ public class PoolingLayer implements PlateLayer {
 		List<Plate> output = new ArrayList<>(gradients.size());
 		for (int i = 0; i < gradients.size(); i++) {
 			Plate errorPlate = gradients.get(i);
-			double[][] upscaledValues = new double[maximumOfWindow.get(0).length][maximumOfWindow.get(0)[0].length];
-			boolean[][] maximumOfPlate = maximumOfWindow.get(i);
-			for (int j = 0; j < maximumOfPlate.length; j++) {
-				for (int k = 0; k < maximumOfPlate[j].length; k++) {
+			double[][] upscaledValues = new double[maximumOfWindow[0].length][maximumOfWindow[0][0].length];
+			for (int j = 0; j < maximumOfWindow[i].length; j++) {
+				for (int k = 0; k < maximumOfWindow[i][j].length; k++) {
 					// gradient is either copied from upper layer or zero - Ran Manor's answer at
 					// https://www.quora.com/In-neural-networks-how-does-backpropagation-get-carried-through-maxpool-layers
-					upscaledValues[j][k] = maximumOfPlate[j][k]
+					upscaledValues[j][k] = maximumOfWindow[i][j][k]
 							? errorPlate.valueAt(j / windowHeight, k / windowWidth)
 							: 0;
 				}
@@ -91,54 +82,6 @@ public class PoolingLayer implements PlateLayer {
 			output.add(new Plate(upscaledValues));
 		}
 		return output;
-	}
-	
-	/** Returns the max-pooled plate. No overlap between each pool. */
-	public Plate maxPool(Plate plate, boolean[][] maximumOfPlate, int windowHeight, int windowWidth) {
-		checkValueInRange(windowHeight, 0, plate.getHeight(), "Max pool window height");
-		checkValueInRange(windowWidth, 0, plate.getWidth(), "Max pool window width");
-		int resultHeight = plate.getHeight() / windowHeight;
-		int resultWidth = plate.getWidth() / windowWidth;
-		resultHeight += plate.getHeight() % windowHeight == 0 ? 0 : 1;
-		resultWidth += plate.getWidth() % windowWidth == 0 ? 0 : 1;
-		
-		double[][] result = new double[resultHeight][resultWidth];
-		for (int i = 0; i < result.length; i++) {
-			for (int j = 0; j < result[i].length; j++) {
-				int windowStartI = Math.min(i * windowHeight, plate.getHeight() - 1);
-				int windowStartJ = Math.min(j * windowWidth, plate.getWidth() - 1);
-				result[i][j] =
-						maxValInWindow(
-								plate,
-								maximumOfPlate,
-								windowStartI,
-								windowStartJ,
-								windowHeight,
-								windowWidth);
-			}
-		}
-		return new Plate(result);
-	}
-	
-	private double maxValInWindow(
-			Plate plate, boolean[][] maximumOfPlate, int windowStartI, int windowStartJ, int windowHeight, int windowWidth) {
-		double max = Double.MIN_VALUE;
-		int windowEndI = Math.min(windowStartI + windowHeight - 1, plate.getHeight() - 1);
-		int windowEndJ = Math.min(windowStartJ + windowWidth - 1, plate.getWidth() - 1);
-		int maxI = -1;
-		int maxJ = -1;
-		for (int i = windowStartI; i <= windowEndI; i++) {
-			for (int j = windowStartJ; j <= windowEndJ; j++) {
-				double value = plate.getValues()[i][j];
-				if (value > max) {
-					max = value;
-					maxI = i;
-					maxJ = j;
-				}
-			}
-		}
-		maximumOfPlate[maxI][maxJ] = true;
-		return max;
 	}
 
 	@Override
