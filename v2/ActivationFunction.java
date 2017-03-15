@@ -9,7 +9,7 @@ public enum ActivationFunction {
 	RELU(/* function */ x -> Math.max(x, 0.01),
 			/* derivative */ x -> (x > 0.01) ? 1.0 : 0.0),
 	SIGMOID(/* function */ x -> 1 / (1 + Math.pow(Math.E, -x)),
-			/* derivative */ x -> x * (1 - x));
+			/* derivative */ x -> (1 / (1 + Math.pow(Math.E, -x))) * (1 - (1 / (1 + Math.pow(Math.E, -x)))));
 
 	private final Function<Double, Double> theFunc;
 	private final Function<Double, Double> derivative;
