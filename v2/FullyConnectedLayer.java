@@ -52,37 +52,43 @@ public class FullyConnectedLayer {
 		return lastOutput;
 	}
 
-	/** 
-	 * Given the error from the previous layer, update the weights and return the error
-	 * for this layer.
-	 */
-	public double[] propagateError(double[] proppedDelta, double learningRate) {
-		if (proppedDelta.length != weights.length) {
-			throw new IllegalArgumentException(
-					String.format(
-							"Got length %d delta, expected length %d!",
-							proppedDelta.length,
-							weights.length));
-		}
-		
-		// Compute deltas for the next layer.
-		double[] delta = new double[weights[0].length - 1]; // Don't count the offset here.
-		for (int i = 0; i < delta.length; i++) {
-			for (int j = 0; j < weights.length; j++) {
-				delta[i] += proppedDelta[j] * weights[j][i] * activation.applyDerivative(lastInput[i]);
-			}
-		}
-		
-		// Update the weights using the propped delta.
-		tensorSubtract(
-				weights,
-				scalarMultiply(
-						learningRate,
-						outerProduct(proppedDelta, lastInput),
-						true /* inline */),
-				true /* inline */);
-		return delta;
-	}
+    /**
+     * Given the error from the previous layer, update the weights and return the error
+     * for this layer.
+     */
+    public double[] propagateError(double[] proppedDelta, double learningRate) {
+        if (proppedDelta.length != weights.length) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "Got length %d delta, expected length %d!",
+                            proppedDelta.length,
+                            weights.length));
+        }
+
+        for (int i = 0; i < proppedDelta.length; i++) {
+            System.out.print(proppedDelta[i] + " ");
+        }
+
+        System.out.println();
+
+        // Compute deltas for the next layer.
+        double[] delta = new double[weights[0].length - 1]; // Don't count the offset here.
+        for (int j = 0; j < delta.length; j++) {
+            for (int i = 0; i < weights.length; i++) {
+                delta[j] += proppedDelta[i] * weights[i][j] * activation.applyDerivative(lastInput[j]);
+            }
+        }
+
+        // Update the weights using the propped delta.
+        tensorSubtract(
+                weights,
+                scalarMultiply(
+                        learningRate,
+                        Util.outerProduct(proppedDelta, lastInput),
+                        true /* inline */),
+                true /* inline */);
+        return delta;
+    }
 	
 	@Override
 	public String toString() {

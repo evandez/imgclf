@@ -96,6 +96,44 @@ public class Plate {
 		return new Plate(result);
 	}
 	
+	/** Returns the max-pooled plate. No overlap between each pool. */
+	public Plate maxPool(int windowHeight, int windowWidth) {
+		checkValueInRange(windowHeight, 0, getHeight(), "Max pool window height");
+		checkValueInRange(windowWidth, 0, getWidth(), "Max pool window width");
+		int resultHeight = getHeight() / windowHeight;
+		int resultWidth = getWidth() / windowWidth;
+		resultHeight += getHeight() % windowHeight == 0 ? 0 : 1;
+		resultWidth += getWidth() % windowWidth == 0 ? 0 : 1;
+		
+		double[][] result = new double[resultHeight][resultWidth];
+		for (int i = 0; i < result.length; i++) {
+			for (int j = 0; j < result[i].length; j++) {
+				int windowStartI = Math.min(i * windowHeight, getHeight() - 1);
+				int windowStartJ = Math.min(j * windowWidth, getWidth() - 1);
+				result[i][j] =
+						maxValInWindow(
+								windowStartI,
+								windowStartJ,
+								windowHeight,
+								windowWidth);
+			}
+		}
+		return new Plate(result);
+	}
+	
+	private double maxValInWindow(
+			int windowStartI, int windowStartJ, int windowHeight, int windowWidth) {
+		double max = Double.MIN_VALUE;
+		int windowEndI = Math.min(windowStartI + windowHeight - 1, getHeight() - 1);
+		int windowEndJ = Math.min(windowStartJ + windowWidth - 1, getWidth() - 1);
+		for (int i = windowStartI; i <= windowEndI; i++) {
+			for (int j = windowStartJ; j <= windowEndJ; j++) {
+				max = Math.max(max, values[i][j]);
+			}
+		}
+		return max;
+	}
+	
 	/** Applies the activation function to all values in the plate. */
 	public Plate applyActivation(ActivationFunction func) {
 		checkNotNull(func, "Activation function");
