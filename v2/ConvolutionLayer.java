@@ -1,5 +1,9 @@
 package v2;
 
+import static v2.Util.checkNotEmpty;
+import static v2.Util.checkNotNull;
+import static v2.Util.checkPositive;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,36 +17,47 @@ public class ConvolutionLayer implements PlateLayer {
      * Convolutions are laid out RGBG RGBG RGBG ... if numChannels = 4
      * or X X X ... if numChannels = 1
      */
-    private final List<Plate> convolutions;
+    private final List<List<Plate>> convolutions;
     private List<Plate> previousInput;
     private List<Plate> previousOutput;
-    private int numChannels;
 
-    private ConvolutionLayer(List<Plate> convolutions, int numChannels) {
+    private ConvolutionLayer(List<List<Plate>> convolutions) {
         this.convolutions = convolutions;
-        this.numChannels = numChannels;
     }
 
     public int numConvolutions() {
         return convolutions.size();
     }
 
+    /** Returns the number of channels in each convolution. */
+    public int getConvolutionDepth() {
+    	return convolutions.get(0).size();
+    }
+    
+    public int getConvolutionHeight() {
+    	return convolutions.get(0).get(0).getHeight();
+    }
+
+    public int getConvolutionWidth() {
+    	return convolutions.get(0).get(0).getWidth();
+    }
+    
     @Override
     public int calculateNumOutputs(int numInputs) {
-        return numInputs / numChannels;
+        return numInputs / getConvolutionDepth();
     }
 
     @Override
     public int calculateOutputHeight(int inputHeight) {
-        return inputHeight - convolutions.get(0).getHeight() + 1;
+        return inputHeight - getConvolutionHeight() + 1;
     }
 
     @Override
     public int calculateOutputWidth(int inputWidth) {
-        return inputWidth - convolutions.get(0).getWidth() + 1;
+        return inputWidth - getConvolutionWidth() + 1;
     }
 
-    public List<Plate> getConvolutions() {
+    public List<List<Plate>> getConvolutions() {
         return convolutions;
     }
 
@@ -53,15 +68,12 @@ public class ConvolutionLayer implements PlateLayer {
         previousInput = input;
         // Convolve each input with each mask.
         List<Plate> output = new ArrayList<>();
-        Plate[] masks = new Plate[numChannels];
-        int maskHeight = convolutions.get(0).getHeight();
-        int maskWidth = convolutions.get(0).getWidth();
-        for (int i = 0; i < convolutions.size(); i += numChannels) {
-            double[][] values = new double[input.get(0).getHeight() - maskHeight + 1][input.get(0).getWidth() - maskWidth + 1];
+        for (int i = 0; i < convolutions.size(); i ++) {
+            double[][] values = new double[input.get(0).getHeight() - getConvolutionHeight() + 1][input.get(0).getWidth() - getConvolutionWidth() + 1];
             // convolve each input image, sum the output, add the new plate
-            for (int j = 0; j < numChannels; j++) {
-                masks[j] = convolutions.get(i + j);
-                Util.tensorAdd(values, input.get(j).convolve(masks[j]).getValues(), true);
+            for (int j = 0; j < getConvolutionDepth(); j++) {
+                Plate convolution = convolutions.get(i).get(j);
+                Util.tensorAdd(values, input.get(j).convolve(convolution).getValues(), true);
                 input.get(j);
             }
             output.add((new Plate(values).applyActivation(ActivationFunction.RELU)));
@@ -72,6 +84,7 @@ public class ConvolutionLayer implements PlateLayer {
 
     @Override
     public List<Plate> propagateError(List<Plate> errors, double learningRate) {
+//   	 	System.out.println(this);
         if (errors.size() != previousOutput.size() || previousInput.isEmpty()) {
             throw new IllegalArgumentException("Bad propagation state.");
         }
@@ -101,6 +114,7 @@ public class ConvolutionLayer implements PlateLayer {
         // Total error
         double[][][] error = new double[errors.size()][][];
         double[][][] delta = new double[error.length][][];
+
         if (previousInput.size() == errors.size()) {
             for (int i = 0; i < errors.size(); i++) {
                 error[i] = new double[previousInput.get(i).getHeight()][previousInput.get(i).getWidth()];
@@ -140,6 +154,29 @@ public class ConvolutionLayer implements PlateLayer {
             return deltaOutput;
         } else {
             return null;
+//
+//        for (int i = 0; i < errors.size(); i++) {
+//            error[i] = new double[previousInput.get(0).getHeight()][previousInput.get(0).getWidth()];
+//            delta[i] = new double[error[i].length][error[i][0].length];
+//            for (int kernel = 0; kernel < getConvolutionDepth(); kernel++) {
+//	            for (int row = 0; row < error[i].length - getConvolutionHeight(); row++) {
+//	                for (int col = 0; col < error[i][row].length - getConvolutionWidth(); col++) {
+//	                    for (int kernelRow = 0; kernelRow < getConvolutionHeight(); kernelRow++) {
+//	                        for (int kernelCol = 0; kernelCol < getConvolutionWidth(); kernelCol++) {
+//	                            error[i][row + kernelRow][col + kernelCol] += errors.get(i).valueAt(row, col)
+//	                                    * convolutions.get(i).get(kernel).valueAt(kernelRow, kernelCol);
+//	                        }
+//	                    }
+//	                }
+//	            }
+//	            for (int row = 0; row < error[i].length; row++) {
+//	                for (int col = 0; col < error[i][row].length; col++) {
+//	                    delta[i][row][col] += error[i][row][col]
+//	                            * ActivationFunction.RELU.applyDerivative(previousInput.get(kernel).valueAt(row, col));
+//	                }
+//	            }
+//            }
+//            deltaOutput.add(new Plate(delta[i]));
         }
     }
 
@@ -149,9 +186,9 @@ public class ConvolutionLayer implements PlateLayer {
         builder.append("\n------\tConvolution Layer\t------\n\n");
         builder.append(String.format(
                 "Convolution Size: %dx%dx%d\n",
-                numChannels,
-                convolutions.get(0).getHeight(),
-                convolutions.get(0).getWidth()));
+                getConvolutionDepth(),
+                getConvolutionHeight(),
+                getConvolutionWidth()));
         builder.append(String.format("Number of convolutions: %d\n", convolutions.size()));
         builder.append("Activation Function: RELU\n");
         builder.append("\n\t------------\t\n");
@@ -198,15 +235,17 @@ public class ConvolutionLayer implements PlateLayer {
             checkPositive(convolutionHeight, "Convolution height", true);
             checkPositive(convolutionWidth, "Convolution width", true);
             checkPositive(numConvolutions, "Number of convolutions", true);
-            List<Plate> convolutions = new ArrayList<>();
+            List<List<Plate>> convolutions = new ArrayList<>();
             for (int i = 0; i < numConvolutions; i++) {
+            	List<Plate> channelConvolutions = new ArrayList<>();
                 for (int j = 0; j < numChannels; j++) {
-                    convolutions.add(
+                    channelConvolutions.add(
                             new Plate(
                                     createRandomConvolution(convolutionHeight, convolutionWidth)));
                 }
+                convolutions.add(channelConvolutions);
             }
-            return new ConvolutionLayer(convolutions, numChannels);
+            return new ConvolutionLayer(convolutions);
         }
 
         // TODO: We should probably use the initialization method suggested by Judy.
