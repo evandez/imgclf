@@ -4,14 +4,24 @@ import java.util.List;
 
 /** Interface for passing plates between conv and pool layers. */
 public interface PlateLayer {
+
+	/** Returns the number of plates in this layer. */
+	int getSize();
+	
 	/** Given the number of inputs, return how many plates this layer will output. */
 	int calculateNumOutputs(int numInputs);
+	
+	int calculateNumOutputs();
 	
 	/** Given the height of the input, return the height of the output. */
 	int calculateOutputHeight(int inputHeight);
 	
+	int calculateOutputHeight();
+	
 	/** Given the width of the input, return the width of the output. */
 	int calculateOutputWidth(int inputWidth);
+	
+	int calculateOutputWidth();
 	
 	/** Pass the given plates through this layer. */
 	List<Plate> computeOutput(List<Plate> input);

@@ -17,39 +17,80 @@ public class PoolingLayer implements PlateLayer {
     private final int windowWidth;
     // quite similar to a plate, except its booleans so more memory efficient
     private ArrayList<boolean[][]> maximumOfWindow;
+    private int numOutputs;
+    private int outputHeight;
+    private int outputWidth;
 
-    private PoolingLayer(int windowHeight, int windowWidth) {
+    private PoolingLayer(int numWindows, int windowHeight, int windowWidth) {
+    	maximumOfWindow = new ArrayList<>(numWindows);
+    	for (int i = 0; i < numWindows; i++) {
+    		maximumOfWindow.add(null);
+    	}
         this.windowHeight = windowHeight;
         this.windowWidth = windowWidth;
     }
 
     @Override
+    public int getSize() {
+    	return maximumOfWindow.size();
+    }
+    
+    @Override
     public int calculateNumOutputs(int numInputs) {
-        return numInputs;
+    	numOutputs = numInputs;
+        return numOutputs;
+    }
+    
+    @Override
+    public int calculateNumOutputs() {
+    	if (numOutputs > 0) {
+    		return numOutputs;
+    	} else {
+    		throw new RuntimeException("Cannot call calculateNumOutputs without arguments before calling it with arguments.");
+    	}
     }
 
     @Override
     public int calculateOutputHeight(int inputHeight) {
-        int outputHeight = inputHeight / windowHeight;
+        outputHeight = inputHeight / windowHeight;
         if (inputHeight % windowHeight > 0) {
             outputHeight++;
         }
         return outputHeight;
     }
+    
+    @Override
+    public int calculateOutputHeight() {
+    	if (outputHeight > 0) {
+    		return outputHeight;
+    	} else {
+    		throw new RuntimeException("Cannot call calculateOutputHeight without arguments before calling it with arguments.");
+    	}
+    }
 
     @Override
     public int calculateOutputWidth(int inputWidth) {
-        int outputWidth = inputWidth / windowWidth;
+        outputWidth = inputWidth / windowWidth;
         if (inputWidth % windowWidth > 0) {
             outputWidth++;
         }
         return outputWidth;
     }
+    
+    @Override
+    public int calculateOutputWidth() {
+    	if (outputWidth > 0) {
+    		return outputWidth;
+    	} else {
+    		throw new RuntimeException("Cannot call calculateOutputWidth without arguments before calling it with arguments.");
+    	}
+    }
+
 
     @Override
     public List<Plate> computeOutput(List<Plate> input) {
         // TODO: Reuse memory.
-        if (maximumOfWindow == null) {
+        if (maximumOfWindow.get(0) == null) {
             maximumOfWindow = new ArrayList<>();
             for (int j = 0; j < input.size(); j++) {
                 maximumOfWindow.add(new boolean[input.get(j).getHeight()][input.get(j).getWidth()]);
@@ -161,7 +202,8 @@ public class PoolingLayer implements PlateLayer {
     public static class Builder {
         private int windowHeight = 0;
         private int windowWidth = 0;
-
+        private int numWindows = 0;
+        
         private Builder() {
         }
 
@@ -172,11 +214,16 @@ public class PoolingLayer implements PlateLayer {
             this.windowWidth = width;
             return this;
         }
+        
+        public Builder setNumWindows(int numWindows) {
+        	this.numWindows = numWindows;
+        	return this;
+        }
 
         public PoolingLayer build() {
             checkPositive(windowHeight, "Window height", true);
             checkPositive(windowWidth, "Window width", true);
-            return new PoolingLayer(windowHeight, windowWidth);
+            return new PoolingLayer(numWindows, windowHeight, windowWidth);
         }
     }
 }

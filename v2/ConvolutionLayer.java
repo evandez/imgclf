@@ -20,6 +20,9 @@ public class ConvolutionLayer implements PlateLayer {
     private List<Plate> previousInput;
     private List<Plate> previousOutput;
     private int numChannels;
+    private int numOutputs;
+    private int outputHeight;
+    private int outputWidth;
 
     private ConvolutionLayer(List<Plate> convolutions, int numChannels) {
         this.convolutions = convolutions;
@@ -27,23 +30,54 @@ public class ConvolutionLayer implements PlateLayer {
         this.numChannels = numChannels;
     }
 
-    public int numConvolutions() {
+    @Override
+    public int getSize() {
         return convolutions.size();
     }
 
     @Override
     public int calculateNumOutputs(int numInputs) {
-        return numInputs / numChannels;
+    	numOutputs = numInputs / numChannels;
+        return numOutputs;
+    }
+    
+    @Override
+    public int calculateNumOutputs() {
+    	if (numOutputs > 0) {
+    		return numOutputs;
+    	} else {
+    		throw new RuntimeException("Cannot call calculateNumOutputs without arguments before calling it with arguments.");
+    	}
     }
 
     @Override
     public int calculateOutputHeight(int inputHeight) {
-        return inputHeight - convolutions.get(0).getHeight() + 1;
+    	outputHeight = inputHeight - convolutions.get(0).getHeight() + 1;
+        return outputHeight;
     }
 
     @Override
+    public int calculateOutputHeight() {
+    	if (outputHeight > 0) {
+    		return outputHeight;
+    	} else {
+    		throw new RuntimeException("Cannot call calculateOutputHeight without arguments before calling it with arguments.");
+    	}
+    }
+    
+    @Override
     public int calculateOutputWidth(int inputWidth) {
-        return inputWidth - convolutions.get(0).getWidth() + 1;
+    	outputWidth = inputWidth - convolutions.get(0).getWidth() + 1;
+        return outputWidth;
+    }
+    
+    @Override
+    public int calculateOutputWidth() {
+    	if (outputWidth > 0) {
+    		return outputWidth;
+    	} else {
+    		throw new RuntimeException("Cannot call calculateOutputWidth without arguments before calling it with arguments.");
+    	}
     }
 
     public List<Plate> getConvolutions() {
@@ -54,7 +88,7 @@ public class ConvolutionLayer implements PlateLayer {
     public List<Plate> computeOutput(List<Plate> input) {
         checkNotNull(input, "Convolution layer input");
         checkNotEmpty(input, "Convolution layer input", false);
-        previousInput = input;
+        previousInput = deepCopyPlates(input);
         // Convolve each input with each mask.
         List<Plate> output = new ArrayList<>();
         Plate[] masks = new Plate[numChannels];
@@ -70,7 +104,7 @@ public class ConvolutionLayer implements PlateLayer {
             }
             output.add((new Plate(values).applyActivation(ActivationFunction.RELU)));
         }
-        previousOutput = output;
+        previousOutput = deepCopyPlates(output);
         return output;
     }
 

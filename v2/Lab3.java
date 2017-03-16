@@ -31,7 +31,7 @@ public class Lab3 {
 	// Images are imageSize x imageSize. The provided data is 128x128, but this can be resized by setting this value (or
 	// passing in an argument). You might want to resize to 8x8, 16x16, 32x32, or 64x64; this can reduce your network
 	// size and speed up debugging runs. ALL IMAGES IN A TRAINING RUN SHOULD BE THE *SAME* SIZE.
-	private static int imageSize = 32;
+	private static int imageSize = 64;
 
 	// We'll hardwire these in, but more robust code would not do so.
 	private static enum Category {
@@ -65,7 +65,7 @@ public class Lab3 {
 	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
-	private static double eta = 0.075, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
+	private static double eta = 0.1, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
 	private static int minEpochs = 50;
@@ -559,15 +559,17 @@ public class Lab3 {
 						.setConvolutionSize(4, 5, 5)
 						.setNumConvolutions(20)
 						.build())
-				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).build())
+				.appendPoolingLayer(PoolingLayer.newBuilder()
+						.setWindowSize(2, 2)
+						.setNumWindows(20)
+						.build())
 				.appendConvolutionLayer(ConvolutionLayer.newBuilder()
 						.setConvolutionSize(1, 5, 5)
 						.setNumConvolutions(20)
 						.build())
-				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).build())
-				.appendConvolutionLayer(ConvolutionLayer.newBuilder()
-						.setConvolutionSize(1, 3, 3)
-						.setNumConvolutions(20)
+				.appendPoolingLayer(PoolingLayer.newBuilder()
+						.setWindowSize(2, 2)
+						.setNumWindows(20)
 						.build())
 				.setFullyConnectedDepth(1) // i.e., one hidden layer.
 				.setFullyConnectedWidth(300)

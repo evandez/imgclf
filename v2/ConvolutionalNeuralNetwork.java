@@ -96,11 +96,11 @@ public class ConvolutionalNeuralNetwork {
 
             // Finally, propagate error through plate layers.
             if (plateLayers.size() > 0) {
-                ConvolutionLayer lastPlate = (ConvolutionLayer) plateLayers.get(plateLayers.size() - 1);
+                PlateLayer lastPlate = plateLayers.get(plateLayers.size() - 1);
                 List<Plate> plateErrors = unpackPlates(
                         fcError,
-                        lastPlate.getConvolutions().get(0).getHeight(),
-                        lastPlate.getConvolutions().get(0).getWidth());
+                        lastPlate.calculateOutputHeight(),
+                        lastPlate.calculateOutputWidth());
                 for (int i = plateLayers.size() - 1; i >= 0; i--) {
                     plateErrors = plateLayers.get(i).propagateError(plateErrors, learningRate);
                 }
@@ -411,7 +411,8 @@ public class ConvolutionalNeuralNetwork {
 
             // Always have at least one hidden layer - add it first.
             int numInputs = outputWidth * outputHeight * numOutputs;
-            numInputs = (plateLayers.size() > 0) ? numInputs * ((ConvolutionLayer) plateLayers.get(plateLayers.size() - 1)).getConvolutions().size(): numInputs;
+            numInputs = (plateLayers.size() > 0) ? numInputs * (plateLayers.get(plateLayers.size() - 1)).getSize(): numInputs;
+            System.out.println(numInputs + " " + outputHeight + " " + outputWidth + " " + numOutputs);
             fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
                     .setActivationFunction(fcActivation)
                     .setNumInputs(numInputs)
