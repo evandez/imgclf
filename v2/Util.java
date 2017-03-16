@@ -196,6 +196,20 @@ public final class Util {
 			}
 		}
 	}
+
+	/** Copy the src 2D array into the dst 2D double array. Arrays must have same dimensions. */
+	public static void doubleArrayCopy2D(double[][] src, double[][] dst) {
+		checkNotNull(src, "Array copy source.");
+		checkNotNull(dst, "Array copy source.");
+		checkPositive(src.length, "Source dimension 1", false);
+		checkPositive(src[0].length, "Source dimension 2", false);
+		checkPositive(dst.length, "Destination dimension 1", false);
+		checkPositive(dst[0].length, "Destination dimension 2", false);
+		// TODO: Maybe verify that arrays are squares of same size.
+		for (int i = 0; i < src.length; i++) {
+			System.arraycopy(src[i], 0, dst[i], 0, src[i].length);
+		}
+	}
 	
 	public static void printMemory() {
 		// Get current size of heap in bytes

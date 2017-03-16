@@ -49,6 +49,7 @@ public class ConvolutionalNeuralNetwork {
     /** Trains the CNN with the given training data and tuning data. */
     public void train(Dataset trainSet, Dataset tuneSet, boolean verbose) {
         Collections.shuffle(trainSet.getImages());
+        double bestAccuracy = 0.0;
         double prevAccuracy = 0.0;
         double currAccuracy = 0.0;
         for (int epoch = 1; epoch <= maxEpochs; epoch++) {
@@ -63,7 +64,11 @@ public class ConvolutionalNeuralNetwork {
                         currAccuracy);
             }
 
-            if (currAccuracy < prevAccuracy && epoch >= minEpochs) {
+            if (currAccuracy > bestAccuracy) {
+            	saveLayerStates();
+            	bestAccuracy = currAccuracy;
+            } else if (currAccuracy < prevAccuracy && epoch >= minEpochs) {
+            	restoreLayerStates();
                 break;
             }
 
@@ -101,6 +106,26 @@ public class ConvolutionalNeuralNetwork {
                 }
             }
         }
+    }
+
+    private void saveLayerStates() {
+    	for (FullyConnectedLayer fcLayer : fullyConnectedLayers) {
+    		fcLayer.saveWeights();
+    	}
+    	
+    	for (PlateLayer plateLayer : plateLayers) {
+    		plateLayer.saveState();
+    	}
+    }
+    
+    private void restoreLayerStates() {
+    	for (FullyConnectedLayer fcLayer : fullyConnectedLayers) {
+    		fcLayer.restoreWeights();
+    	}
+    	
+    	for (PlateLayer plateLayer : plateLayers) {
+    		plateLayer.restoreState();
+    	}
     }
 
     /**

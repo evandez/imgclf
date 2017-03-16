@@ -2,6 +2,7 @@ package v2;
 
 import static v2.Util.checkNotNull;
 import static v2.Util.checkPositive;
+import static v2.Util.doubleArrayCopy2D;
 import static v2.Util.outerProduct;
 import static v2.Util.scalarMultiply;
 import static v2.Util.tensorSubtract;
@@ -12,23 +13,26 @@ import static v2.Util.tensorSubtract;
  * This class stores the weights between inputs and nodes, and provides
  * functionality for computing the output given an input vector and for
  * back-propagating errors.
- * 
- * TODO: Use an offset.
  */
 public class FullyConnectedLayer {
 	private final double[][] weights;
+	private final double[][] savedWeights;
 	private final double[] lastInput;
 	private final double[] lastOutput;
 	private final ActivationFunction activation;
 
 	private FullyConnectedLayer(double[][] weights, ActivationFunction activation) {
 		this.weights = weights;
+		this.savedWeights = new double[weights.length][weights[0].length];
 		this.lastInput = new double[weights[0].length];
 		this.lastOutput = new double[weights.length];
 		this.activation = activation;
 		
 		// Set the last value to be the offset. This will never change.
 		this.lastInput[this.lastInput.length - 1] = -1;
+		
+		// Save initial weights.
+		doubleArrayCopy2D(weights, savedWeights);
 	}
 
 	/** Compute the output of the given input vector. */
@@ -65,12 +69,6 @@ public class FullyConnectedLayer {
                             weights.length));
         }
 
-        for (int i = 0; i < proppedDelta.length; i++) {
-//            System.out.print(proppedDelta[i] + " ");
-        }
-
-//        System.out.println();
-
         // Compute deltas for the next layer.
         double[] delta = new double[weights[0].length - 1]; // Don't count the offset here.
         for (int j = 0; j < delta.length; j++) {
@@ -84,11 +82,17 @@ public class FullyConnectedLayer {
                 weights,
                 scalarMultiply(
                         learningRate,
-                        Util.outerProduct(proppedDelta, lastInput),
+                        outerProduct(proppedDelta, lastInput),
                         true /* inline */),
                 true /* inline */);
         return delta;
     }
+    
+    /** Saves the current weights in an auxiliary array. */
+    public void saveWeights() { doubleArrayCopy2D(weights, savedWeights); }
+    
+    /** Restores the weights from the last save. */
+    public void restoreWeights() { doubleArrayCopy2D(savedWeights, weights); }
 	
 	@Override
 	public String toString() {

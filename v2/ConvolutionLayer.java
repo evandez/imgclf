@@ -3,6 +3,7 @@ package v2;
 import static v2.Util.checkNotEmpty;
 import static v2.Util.checkNotNull;
 import static v2.Util.checkPositive;
+import static v2.Util.doubleArrayCopy2D;
 import static v2.Util.tensorAdd;
 
 import java.util.ArrayList;
@@ -12,17 +13,17 @@ import java.util.List;
  * A layer that performs n convolutions. Uses ReLU for activation.
  */
 public class ConvolutionLayer implements PlateLayer {
-    /**
-     * Convolutions are laid out RGBG RGBG RGBG ... if numChannels = 4
-     * or X X X ... if numChannels = 1
-     */
+    // Convolutions are laid out RGBG RGBG RGBG ... if numChannels = 4
+    // or X X X ... if numChannels = 1
     private final List<Plate> convolutions;
+    private final List<Plate> savedConvolutions;
     private List<Plate> previousInput;
     private List<Plate> previousOutput;
     private int numChannels;
 
     private ConvolutionLayer(List<Plate> convolutions, int numChannels) {
         this.convolutions = convolutions;
+        this.savedConvolutions = new ArrayList<>(deepCopyPlates(convolutions));
         this.numChannels = numChannels;
     }
 
@@ -32,7 +33,6 @@ public class ConvolutionLayer implements PlateLayer {
 
     @Override
     public int calculateNumOutputs(int numInputs) {
-//        System.out.println(numInputs + " ");
         return numInputs / numChannels;
     }
 
@@ -76,7 +76,6 @@ public class ConvolutionLayer implements PlateLayer {
 
     @Override
     public List<Plate> propagateError(List<Plate> errors, double learningRate) {
-//   	 	System.out.println(this);
         if (errors.size() != previousOutput.size() || previousInput.isEmpty()) {
             throw new IllegalArgumentException("Bad propagation state.");
         }
@@ -141,7 +140,29 @@ public class ConvolutionLayer implements PlateLayer {
         }
     }
 
+    @Override
+    public void saveState() { 
+    	savedConvolutions.clear();
+    	savedConvolutions.addAll(deepCopyPlates(convolutions));
+    }
 
+    @Override
+    public void restoreState() {
+    	convolutions.clear();
+    	convolutions.addAll(savedConvolutions);
+    }
+
+    private static List<Plate> deepCopyPlates(List<Plate> plates) {
+    	List<Plate> deepCopy = new ArrayList<>(plates.size());
+    	for (Plate plate : plates) {
+    		double[][] plateValues = plate.getValues();
+    		double[][] copiedValues = new double[plateValues.length][plateValues[0].length];
+    		doubleArrayCopy2D(plateValues, copiedValues);
+    		deepCopy.add(new Plate(copiedValues));
+    	}
+    	return deepCopy;
+    }
+    
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

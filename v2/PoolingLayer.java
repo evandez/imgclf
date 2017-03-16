@@ -85,6 +85,12 @@ public class PoolingLayer implements PlateLayer {
         return output;
     }
 
+    @Override
+    public void saveState() { /* Do nothing!*/ }
+    
+    @Override
+    public void restoreState() { /* Do nothing! */ }
+
     /** Returns the max-pooled plate. No overlap between each pool. */
     public Plate maxPool(Plate plate, boolean[][] maximumOfPlate, int windowHeight, int windowWidth) {
         checkValueInRange(windowHeight, 0, plate.getHeight(), "Max pool window height");
