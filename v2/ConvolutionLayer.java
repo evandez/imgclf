@@ -32,7 +32,7 @@ public class ConvolutionLayer implements PlateLayer {
 
     @Override
     public int calculateNumOutputs(int numInputs) {
-        System.out.println(numInputs + " ");
+//        System.out.println(numInputs + " ");
         return numInputs / numChannels;
     }
 
@@ -133,9 +133,8 @@ public class ConvolutionLayer implements PlateLayer {
                 }
 
                 deltaOutput.add(new Plate(delta[i]));
-                System.out.println(deltaOutput.get(deltaOutput.size() - 1).toString());
+//                System.out.println(deltaOutput.get(deltaOutput.size() - 1).toString());
             }
-            System.exit(0);
             return deltaOutput;
         } else {
             return null;

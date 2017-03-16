@@ -65,7 +65,7 @@ public class Lab3 {
 	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
-	private static double eta = 0.1, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
+	private static double eta = 0.075, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
 	private static int minEpochs = 50;
@@ -571,7 +571,7 @@ public class Lab3 {
 						.build())
 				.setFullyConnectedDepth(1) // i.e., one hidden layer.
 				.setFullyConnectedWidth(300)
-				.setFullyConnectedActivationFunction(ActivationFunction.RELU)
+				.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
 				.setClasses(categoryNames)
 				.setMinEpochs(minEpochs)
 				.setMaxEpochs(maxEpochs)

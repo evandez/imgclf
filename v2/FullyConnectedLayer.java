@@ -66,10 +66,10 @@ public class FullyConnectedLayer {
         }
 
         for (int i = 0; i < proppedDelta.length; i++) {
-            System.out.print(proppedDelta[i] + " ");
+//            System.out.print(proppedDelta[i] + " ");
         }
 
-        System.out.println();
+//        System.out.println();
 
         // Compute deltas for the next layer.
         double[] delta = new double[weights[0].length - 1]; // Don't count the offset here.
