@@ -80,7 +80,7 @@ public class ConvolutionalNeuralNetwork {
     private void trainSingleEpoch(Dataset trainSet) {
         for (Instance img : trainSet.getImages()) {
             // First, forward propagate.
-            double[] output = computeOutput(img);
+            double[] output = computeOutput(img, true /* currently training */);
             double[] correctOutput = labelToOneOfN(img.getLabel());
 
             // Compute initial deltas.
@@ -155,7 +155,7 @@ public class ConvolutionalNeuralNetwork {
 
     /** Returns the predicted label for the image. */
     public String classify(Instance img) {
-        double[] probs = computeOutput(img);
+        double[] probs = computeOutput(img, false /* not currently training */);
         double maxProb = -1;
         int bestIndex = -1;
         for (int i = 0; i < probs.length; i++) {
@@ -171,7 +171,7 @@ public class ConvolutionalNeuralNetwork {
      * Propagates the image through the network and returns the last
      * (fully-connected) layer's output.
      */
-    private double[] computeOutput(Instance img) {
+    private double[] computeOutput(Instance img, boolean currentlyTraining) {
         // Pass the input through the plate layers first.
         List<Plate> plates = Arrays.asList(instanceToPlate(img));
         for (PlateLayer layer : plateLayers) {
@@ -181,7 +181,7 @@ public class ConvolutionalNeuralNetwork {
         // Then pass the output through the fully connected layers.
         double[] vec = packPlates(plates);
         for (FullyConnectedLayer fcLayer : fullyConnectedLayers) {
-            vec = fcLayer.computeOutput(vec);
+            vec = fcLayer.computeOutput(vec, currentlyTraining);
         }
         return vec;
     }
@@ -303,6 +303,7 @@ public class ConvolutionalNeuralNetwork {
         private int minEpochs = 0;
         private int maxEpochs = 0;
         private double learningRate = 0;
+        private double dropoutRate = 0;
         private boolean useRGB = true;
 
         private Builder() {}
@@ -375,6 +376,15 @@ public class ConvolutionalNeuralNetwork {
             this.learningRate = learningRate;
             return this;
         }
+        
+        public Builder setDropoutRate(double dropoutRate) {
+        	if (dropoutRate < 0 || dropoutRate > 1) {
+        		throw new IllegalArgumentException(
+        				String.format("Invalid dropout rate of %.2f\n", dropoutRate));
+        	}
+        	this.dropoutRate = dropoutRate;
+        	return this;
+        }
 
         public Builder setUseRGB(boolean useRGB) {
             this.useRGB = useRGB;
@@ -392,6 +402,7 @@ public class ConvolutionalNeuralNetwork {
             checkPositive(minEpochs, "Min epochs", true);
             checkPositive(maxEpochs, "Max epochs", true);
             checkPositive(learningRate, "Learning rate", true);
+            // Dropout rate defaults to 0.
             // No check for useRGB. Just default to true.
 
             // Given input dimensions, determine how many plates will be output by
@@ -411,10 +422,12 @@ public class ConvolutionalNeuralNetwork {
 
             // Always have at least one hidden layer - add it first.
             int numInputs = outputWidth * outputHeight * numOutputs;
-            numInputs = (plateLayers.size() > 0) ? numInputs * (plateLayers.get(plateLayers.size() - 1)).getSize(): numInputs;
-            System.out.println(numInputs + " " + outputHeight + " " + outputWidth + " " + numOutputs);
+            numInputs = plateLayers.size() > 0
+            		? numInputs * (plateLayers.get(plateLayers.size() - 1)).getSize()
+            		: numInputs;
             fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
                     .setActivationFunction(fcActivation)
+                    .setDropoutRate(dropoutRate)
                     .setNumInputs(numInputs)
                     .setNumNodes(fullyConnectedWidth)
                     .build());
@@ -423,6 +436,7 @@ public class ConvolutionalNeuralNetwork {
             for (int i = 0; i < fullyConnectedDepth - 1; i++) {
                 fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
                         .setActivationFunction(fcActivation)
+                        .setDropoutRate(dropoutRate)
                         .setNumInputs(fullyConnectedWidth)
                         .setNumNodes(fullyConnectedWidth)
                         .build());

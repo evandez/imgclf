@@ -1,5 +1,6 @@
 package v2;
 
+import static v2.Util.RNG;
 import static v2.Util.checkNotNull;
 import static v2.Util.checkPositive;
 import static v2.Util.doubleArrayCopy2D;
@@ -20,23 +21,34 @@ public class FullyConnectedLayer {
 	private final double[] lastInput;
 	private final double[] lastOutput;
 	private final ActivationFunction activation;
+	private final double dropoutRate;
+	private final boolean[] activeNodes;
 
-	private FullyConnectedLayer(double[][] weights, ActivationFunction activation) {
+	private FullyConnectedLayer(
+			double[][] weights,
+			ActivationFunction activation,
+			double dropoutRate) {
+		// Initialize the standard stuff.
 		this.weights = weights;
 		this.savedWeights = new double[weights.length][weights[0].length];
 		this.lastInput = new double[weights[0].length];
 		this.lastOutput = new double[weights.length];
 		this.activation = activation;
 		
+		// Initialize auxiliary data for dropout.
+		this.dropoutRate = dropoutRate;
+		this.activeNodes = new boolean[weights.length];
+		resetDroppedOutNodes(); // Nodes are active by default.
+		
 		// Set the last value to be the offset. This will never change.
 		this.lastInput[this.lastInput.length - 1] = -1;
-		
+
 		// Save initial weights.
 		doubleArrayCopy2D(weights, savedWeights);
 	}
 
 	/** Compute the output of the given input vector. */
-	public double[] computeOutput(double[] input) {
+	public double[] computeOutput(double[] input, boolean currentlyTraining) {
 		if (input.length != lastInput.length - 	1) {
 			throw new IllegalArgumentException(
 					String.format(
@@ -45,11 +57,27 @@ public class FullyConnectedLayer {
 							lastInput.length));
 		}
 		
+		if (currentlyTraining) {
+			determineDroppedOutNodes();
+		} else {
+			resetDroppedOutNodes();
+		}
+		
 		System.arraycopy(input, 0, lastInput, 0, input.length);
 		for (int i = 0; i < lastOutput.length; i++) {
+			// Skip nodes that are dropped out.
+			if (!activeNodes[i]) {
+				continue;
+			}
+
 			double sum = 0;
 			for (int j = 0; j < lastInput.length; j++) {
-				sum += weights[i][j] * lastInput[j];
+				double sumTerm = weights[i][j] * lastInput[j];
+				if (!currentlyTraining) {
+					// Down-scale only if testing/tuning.
+					sumTerm *= (1 - dropoutRate);
+				}
+				sum += sumTerm;
 			}
 			lastOutput[i] = activation.apply(sum);
 		}
@@ -73,6 +101,9 @@ public class FullyConnectedLayer {
         double[] delta = new double[weights[0].length - 1]; // Don't count the offset here.
         for (int j = 0; j < delta.length; j++) {
             for (int i = 0; i < weights.length; i++) {
+            	if (!activeNodes[i]) {
+            		continue;
+            	}
                 delta[j] += proppedDelta[i] * weights[i][j] * activation.applyDerivative(lastInput[j]);
             }
         }
@@ -86,6 +117,21 @@ public class FullyConnectedLayer {
                         true /* inline */),
                 true /* inline */);
         return delta;
+    }
+    
+    private void determineDroppedOutNodes() {
+    	resetDroppedOutNodes();
+    	for (int i = 0; i < activeNodes.length; i++) {
+    		if (dropoutRate > RNG.nextDouble()) {
+    			activeNodes[i] = false;
+    		}
+    	}
+    }
+    
+    private void resetDroppedOutNodes() {
+    	for (int i = 0; i < activeNodes.length; i++) {
+    		activeNodes[i] = true;
+    	}
     }
     
     /** Saves the current weights in an auxiliary array. */
@@ -102,6 +148,7 @@ public class FullyConnectedLayer {
 				String.format("Number of inputs: %d (plus a bias)\n", weights[0].length - 1));
 		builder.append(String.format("Number of nodes: %d\n", weights.length));
 		builder.append(String.format("Activation function: %s\n", activation.toString()));
+		builder.append(String.format("Dropout rate: %.2f", dropoutRate));
 		builder.append("\n\t------------\t\n");
 		return builder.toString();
 	}
@@ -114,6 +161,7 @@ public class FullyConnectedLayer {
 		private ActivationFunction func = null;
 		private int numInputs = 0;
 		private int numNodes = 0;
+		private double dropoutRate = 0;
 		
 		private Builder() {}
 
@@ -135,17 +183,28 @@ public class FullyConnectedLayer {
 			return this;
 		}
 		
+		public Builder setDropoutRate(double dropoutRate) {
+			if (dropoutRate < 0 || dropoutRate > 1) {
+        		throw new IllegalArgumentException(
+        				String.format("Invalid dropout rate of %.2f\n", dropoutRate));
+        	}
+			this.dropoutRate = dropoutRate;
+			return this;
+		}
+		
 		public FullyConnectedLayer build() {
 			checkNotNull(func, "Fully connected activation function");
 			checkPositive(numInputs, "Number of fully connected inputs", true);
 			checkPositive(numNodes, "Number of fully connected nodes", true);
+			// Dropout rate defaults to 0.
+
 			double[][] weights = new double[numNodes][numInputs + 1];
 			for (int i = 0; i < weights.length; i++) {
 				for (int j = 0; j < weights[i].length; j++) {
 					weights[i][j] = Lab3.getRandomWeight(numInputs, numNodes);
 				}
 			}
-			return new FullyConnectedLayer(weights, func);
+			return new FullyConnectedLayer(weights, func, dropoutRate);
 		}
 	}
 }
