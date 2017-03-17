@@ -80,10 +80,6 @@ public class ConvolutionLayer implements PlateLayer {
     	}
     }
 
-    public List<Plate> getConvolutions() {
-        return convolutions;
-    }
-
     @Override
     public List<Plate> computeOutput(List<Plate> input) {
         checkNotNull(input, "Convolution layer input");
@@ -199,30 +195,28 @@ public class ConvolutionLayer implements PlateLayer {
     
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("\n------\tConvolution Layer\t------\n\n");
-        builder.append(String.format(
-                "Convolution Size: %dx%dx%d\n",
-                numChannels,
-                convolutions.get(0).getHeight(),
-                convolutions.get(0).getWidth()));
-        builder.append(String.format("Number of convolutions: %d\n", convolutions.size()));
-        builder.append("Activation Function: RELU\n");
-        builder.append("\n\t------------\t\n");
-        return builder.toString();
+        return "\n------\tConvolution Layer\t------\n\n" +
+                String.format(
+                        "Convolution Size: %dx%dx%d\n",
+                        numChannels,
+                        convolutions.get(0).getHeight(),
+                        convolutions.get(0).getWidth()) +
+                String.format("Number of convolutions: %d\n", convolutions.size()) +
+                "Activation Function: RELU\n" +
+                "\n\t------------\t\n";
     }
 
     /**
      * Returns a new builder.
      */
-    public static Builder newBuilder() {
+    static Builder newBuilder() {
         return new Builder();
     }
 
     /**
      * A simple builder pattern for managing the layer's parameters at construction.
      */
-    public static class Builder {
+    static class Builder {
         private int numChannels = 0;
         private int convolutionHeight = 0;
         private int convolutionWidth = 0;
@@ -231,7 +225,7 @@ public class ConvolutionLayer implements PlateLayer {
         private Builder() {
         }
 
-        public Builder setConvolutionSize(int numChannels, int height, int width) {
+        Builder setConvolutionSize(int numChannels, int height, int width) {
             checkPositive(numChannels, "Convolution channels", false);
             checkPositive(height, "Convolution height", false);
             checkPositive(width, "Convolution width", false);
@@ -241,13 +235,13 @@ public class ConvolutionLayer implements PlateLayer {
             return this;
         }
 
-        public Builder setNumConvolutions(int numConvolutions) {
+        Builder setNumConvolutions(int numConvolutions) {
             checkPositive(numConvolutions, "Number of convolutions", false);
             this.numConvolutions = numConvolutions;
             return this;
         }
 
-        public ConvolutionLayer build() {
+        ConvolutionLayer build() {
             checkPositive(numChannels, "Convolution channels", true);
             checkPositive(convolutionHeight, "Convolution height", true);
             checkPositive(convolutionWidth, "Convolution width", true);
@@ -263,7 +257,6 @@ public class ConvolutionLayer implements PlateLayer {
             return new ConvolutionLayer(convolutions, numChannels);
         }
 
-        // TODO: We should probably use the initialization method suggested by Judy.
         private static double[][] createRandomConvolution(int height, int width) {
             double[][] plateValues = new double[height][width];
             for (int i = 0; i < plateValues.length; i++) {

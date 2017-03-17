@@ -14,7 +14,7 @@ public class Plate {
 	 * IMPORTANT: The values should be organized so that the dimensions follow the
 	 * pattern of (height, width).
 	 */
-	public Plate(double[][] values) {
+	Plate(double[][] values) {
 		checkNotNull(values, "Plate values");
 		checkPositive(values.length, "Plate height", false);
 		checkPositive(values[0].length, "Plate width", false);
@@ -22,24 +22,24 @@ public class Plate {
 	}
 
 	/** Returns the height of each channel. */
-	public int getHeight() { return values.length; }
+	int getHeight() { return values.length; }
 	
 	/** Returns the width of each channel. */
 	public int getWidth() { return values[0].length; }
 	
 	/** Returns the total number of values in the plate. */
-	public int getTotalNumValues() { return getHeight() * getWidth(); }
+	int getTotalNumValues() { return getHeight() * getWidth(); }
 	
-	public double[][] getValues() {
+	double[][] getValues() {
 		return values;
 	}
 	
-	public void setVals(double[][] newVals) {
+	void setVals(double[][] newVals) {
 		this.values = newVals;
 	}
 	
 	/** Returns the value at the given channel, row, and column. */
-	public double valueAt( int row, int col) {
+	double valueAt( int row, int col) {
 		checkValueInRange(row, 0, getHeight(), "Row index");
 		checkValueInRange(col, 0, getWidth(), "Column index");
 		return values[row][col];
@@ -50,7 +50,7 @@ public class Plate {
 	 * 
 	 * The returned plate has the same size as this one.
 	 */
-	public Plate convolve(Plate mask) {
+	Plate convolve(Plate mask) {
 		checkValidMask(mask);
 		int maskHeight = mask.getHeight();
 		int maskWidth = mask.getWidth();
@@ -86,7 +86,7 @@ public class Plate {
 	}
 	
 	/** Flips each channel by 180 degrees. */
-	public Plate rot180() {
+	Plate rot180() {
 		double[][] result = new double[getHeight()][getWidth()];
 		for (int i = 0; i < getHeight(); i++) {
 			for (int j = 0; j < getWidth(); j++) {
@@ -96,46 +96,8 @@ public class Plate {
 		return new Plate(result);
 	}
 	
-	/** Returns the max-pooled plate. No overlap between each pool. */
-	public Plate maxPool(int windowHeight, int windowWidth) {
-		checkValueInRange(windowHeight, 0, getHeight(), "Max pool window height");
-		checkValueInRange(windowWidth, 0, getWidth(), "Max pool window width");
-		int resultHeight = getHeight() / windowHeight;
-		int resultWidth = getWidth() / windowWidth;
-		resultHeight += getHeight() % windowHeight == 0 ? 0 : 1;
-		resultWidth += getWidth() % windowWidth == 0 ? 0 : 1;
-		
-		double[][] result = new double[resultHeight][resultWidth];
-		for (int i = 0; i < result.length; i++) {
-			for (int j = 0; j < result[i].length; j++) {
-				int windowStartI = Math.min(i * windowHeight, getHeight() - 1);
-				int windowStartJ = Math.min(j * windowWidth, getWidth() - 1);
-				result[i][j] =
-						maxValInWindow(
-								windowStartI,
-								windowStartJ,
-								windowHeight,
-								windowWidth);
-			}
-		}
-		return new Plate(result);
-	}
-	
-	private double maxValInWindow(
-			int windowStartI, int windowStartJ, int windowHeight, int windowWidth) {
-		double max = Double.MIN_VALUE;
-		int windowEndI = Math.min(windowStartI + windowHeight - 1, getHeight() - 1);
-		int windowEndJ = Math.min(windowStartJ + windowWidth - 1, getWidth() - 1);
-		for (int i = windowStartI; i <= windowEndI; i++) {
-			for (int j = windowStartJ; j <= windowEndJ; j++) {
-				max = Math.max(max, values[i][j]);
-			}
-		}
-		return max;
-	}
-	
 	/** Applies the activation function to all values in the plate. */
-	public Plate applyActivation(ActivationFunction func) {
+	Plate applyActivation(ActivationFunction func) {
 		checkNotNull(func, "Activation function");
 		double[][] output = new double[getHeight()][getWidth()];
 		for (int i = 0; i < getHeight(); i++) {
@@ -147,7 +109,7 @@ public class Plate {
 	}
 	
 	/** Pack this plate into a 1D array, channel by channel, row by row. */
-	public double[] as1DArray() {
+	double[] as1DArray() {
 		double[] result = new double[getTotalNumValues()];
 		for (int row = 0; row < getHeight(); row++) {
 			System.arraycopy(

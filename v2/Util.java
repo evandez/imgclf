@@ -5,11 +5,11 @@ import java.util.Random;
 
 /** Utility methods and objects used throughout the network. */
 public final class Util {
-	public static final int SEED = 0;
-	public static final Random RNG = new Random(SEED);
+	static final int SEED = 0;
+	static final Random RNG = new Random(SEED);
 	
 	/** Performs v1 * v2^T. */
-	public static double[][] outerProduct(double[] v1, double[] v2) {
+	static double[][] outerProduct(double[] v1, double[] v2) {
 		checkVectorNotNullOrEmpty(v1);
 		checkVectorNotNullOrEmpty(v2);
 		double[][] result = new double[v1.length][v2.length];
@@ -34,12 +34,12 @@ public final class Util {
 	}
 	
 	/** Performs vector scalar multiplication. See description for 3D version. */
-	public static double[] scalarMultiply(double scalar, double[] vector, boolean inline) {
+	static double[] scalarMultiply(double scalar, double[] vector, boolean inline) {
 		return scalarMultiply(scalar, new double[][][]{{ vector }}, inline)[0][0];
 	}
 	
 	/** Performs matrix scalar multiplication. See description for 3D version. */
-	public static double[][] scalarMultiply(double scalar, double[][] matrix, boolean inline) {
+	static double[][] scalarMultiply(double scalar, double[][] matrix, boolean inline) {
 		return scalarMultiply(scalar, new double[][][]{ matrix }, inline)[0];
 	}
 	
@@ -48,7 +48,7 @@ public final class Util {
 	 * 
 	 * If inline is true, this method directly mutates the given tensor.
 	 */
-	public static double[][][] scalarMultiply(double scalar, double[][][] tensor, boolean inline) {
+	static double[][][] scalarMultiply(double scalar, double[][][] tensor, boolean inline) {
 		checkTensorNotNullOrEmpty(tensor);
 		double[][][] result = inline
 				? tensor
@@ -64,27 +64,27 @@ public final class Util {
 	}
 	
 	/** Performs v1 - v2 (for vectors). See description for 3D version. */
-	public static double[] tensorSubtract(double[] v1, double[] v2, boolean inline) {
+	static double[] tensorSubtract(double[] v1, double[] v2, boolean inline) {
 		return tensorSubtract(new double[][][] {{ v1 }}, new double[][][]{{ v2 }}, inline)[0][0];
 	}
 	
 	/** Performs m1 - m2 (for matrices). See description for 3D version. */
-	public static double[][] tensorSubtract(double[][] m1, double[][] m2, boolean inline) {
+	static double[][] tensorSubtract(double[][] m1, double[][] m2, boolean inline) {
 		return tensorSubtract(new double[][][]{ m1 }, new double[][][]{ m2 }, inline)[0];
 	}
 	
 	/** Performs t1 - t2 (for 3D tensors). See description for 3D tensorAdd. */
-	public static double[][][] tensorSubtract(double[][][] t1, double[][][] t2, boolean inline) {
+	static double[][][] tensorSubtract(double[][][] t1, double[][][] t2, boolean inline) {
 		return tensorAdd(t1, scalarMultiply(-1, t2, inline), inline);
 	}
 	
 	/** Performs v1 + v2 (for vectors). See description for 3D version. */
-	public static double[] tensorAdd(double[] v1, double[] v2, boolean inline) {
+	static double[] tensorAdd(double[] v1, double[] v2, boolean inline) {
 		return tensorAdd(new double[][][]{{ v1 }}, new double[][][]{{ v2 }}, inline)[0][0];
 	}
 	
 	/** Performs m1 + m2 (for matrices). See description for 3D version. */
-	public static double[][] tensorAdd(double[][] m1, double[][] m2, boolean inline) {
+	static double[][] tensorAdd(double[][] m1, double[][] m2, boolean inline) {
 		return tensorAdd(new double[][][]{ m1 }, new double[][][]{ m2 }, inline)[0];
 	}
 	
@@ -93,7 +93,7 @@ public final class Util {
 	 * 
 	 * If inline is true, this method directly mutates t1.
 	 */
-	public static double[][][] tensorAdd(double[][][] t1, double[][][] t2, boolean inline) {
+	static double[][][] tensorAdd(double[][][] t1, double[][][] t2, boolean inline) {
 		checkTensorNotNullOrEmpty(t1);
 		checkTensorNotNullOrEmpty(t2);
 		checkTensorDimensionsMatch(t1, t2);
@@ -151,7 +151,7 @@ public final class Util {
 	/**
 	 * Verifies that the value with the given name is in the range [min, max).
 	 */
-	public static void checkValueInRange(int val, int min, int max, String name) {
+	static void checkValueInRange(int val, int min, int max, String name) {
 		if (val < min || val >= max) {
 			throw new IllegalArgumentException(
 					String.format(
@@ -160,7 +160,7 @@ public final class Util {
 	}
 	
 	/** Verifies that the object with the given name is not null. */
-	public static void checkNotNull(Object obj, String name) {
+	static void checkNotNull(Object obj, String name) {
 		if (obj == null) {
 			throw new NullPointerException(String.format("%s was null!", name));
 		}
@@ -171,7 +171,7 @@ public final class Util {
 	 * 
 	 * The boolean parameter specifies which type of exception to throw.
 	 */
-	public static void checkPositive(double val, String name, boolean sourceIsStateful) {
+	static void checkPositive(double val, String name, boolean sourceIsStateful) {
 		if (val <= 0) {
 			if (sourceIsStateful) {
 				throw new IllegalStateException(String.format("%s was not set!", name));
@@ -186,7 +186,7 @@ public final class Util {
 	 * 
 	 * Again, the boolean parameter specifies the type of exception to throw.
 	 */
-	public static void checkNotEmpty(Collection<?> coll, String name, boolean sourceIsStateful) {
+	static void checkNotEmpty(Collection<?> coll, String name, boolean sourceIsStateful) {
 		if (coll.isEmpty()) {
 			if (sourceIsStateful) {
 				throw new IllegalStateException(
@@ -198,14 +198,13 @@ public final class Util {
 	}
 
 	/** Copy the src 2D array into the dst 2D double array. Arrays must have same dimensions. */
-	public static void doubleArrayCopy2D(double[][] src, double[][] dst) {
+	static void doubleArrayCopy2D(double[][] src, double[][] dst) {
 		checkNotNull(src, "Array copy source.");
 		checkNotNull(dst, "Array copy source.");
 		checkPositive(src.length, "Source dimension 1", false);
 		checkPositive(src[0].length, "Source dimension 2", false);
 		checkPositive(dst.length, "Destination dimension 1", false);
 		checkPositive(dst[0].length, "Destination dimension 2", false);
-		// TODO: Maybe verify that arrays are squares of same size.
 		for (int i = 0; i < src.length; i++) {
 			System.arraycopy(src[i], 0, dst[i], 0, src[i].length);
 		}

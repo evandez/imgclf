@@ -65,7 +65,7 @@ public class Lab3 {
 	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
-	private static double eta = 0.1, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
+	private static double eta = 0.01, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
 	private static int minEpochs = 50;
@@ -541,7 +541,7 @@ public class Lab3 {
 		cnn.train(trainSet, tuneSet, true);
 		
 		System.out.println("\n******\tSingle-HU CNN testing has begun.\t******");
-		cnn.test(testSet, true);		
+		cnn.test(testSet, true, true);
 		return 0;
 	}
 
@@ -591,7 +591,7 @@ public class Lab3 {
 		cnn.train(trainSet, tuneSet, true);
 		
 		System.out.println("\n******\tDeep CNN testing has begun.\t******");
-		System.out.println(cnn.test(testSet, true) + "% accuracy");
+		System.out.println(cnn.test(testSet, true, true) + "% accuracy");
 		return 0;
 	}
 

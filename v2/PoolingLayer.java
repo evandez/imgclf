@@ -10,7 +10,6 @@ import java.util.List;
  * A plate layer that performs max pooling on a specified window. There is no overlap between different placements of
  * the window.
  *
- * TODO: This implementation does not let you vary stride. In the future, we may want to add that feature.
  */
 public class PoolingLayer implements PlateLayer {
     private final int windowHeight;
@@ -89,15 +88,14 @@ public class PoolingLayer implements PlateLayer {
 
     @Override
     public List<Plate> computeOutput(List<Plate> input) {
-        // TODO: Reuse memory.
         if (maximumOfWindow.get(0) == null) {
             maximumOfWindow = new ArrayList<>();
-            for (int j = 0; j < input.size(); j++) {
-                maximumOfWindow.add(new boolean[input.get(j).getHeight()][input.get(j).getWidth()]);
+            for (Plate anInput : input) {
+                maximumOfWindow.add(new boolean[anInput.getHeight()][anInput.getWidth()]);
             }
         }
 
-        List<Plate> output = new ArrayList<Plate>(input.size());
+        List<Plate> output = new ArrayList<>(input.size());
         for (int i = 0; i < input.size(); i++) {
             output.add(maxPool(input.get(i), maximumOfWindow.get(i), windowHeight, windowWidth));
         }
@@ -106,7 +104,6 @@ public class PoolingLayer implements PlateLayer {
 
     @Override
     public List<Plate> propagateError(List<Plate> gradients, double learningRate) {
-        // TODO: Reuse memory.
         List<Plate> output = new ArrayList<>(gradients.size());
         for (int i = 0; i < gradients.size(); i++) {
             Plate errorPlate = gradients.get(i);
@@ -133,7 +130,7 @@ public class PoolingLayer implements PlateLayer {
     public void restoreState() { /* Do nothing! */ }
 
     /** Returns the max-pooled plate. No overlap between each pool. */
-    public Plate maxPool(Plate plate, boolean[][] maximumOfPlate, int windowHeight, int windowWidth) {
+    private Plate maxPool(Plate plate, boolean[][] maximumOfPlate, int windowHeight, int windowWidth) {
         checkValueInRange(windowHeight, 0, plate.getHeight(), "Max pool window height");
         checkValueInRange(windowWidth, 0, plate.getWidth(), "Max pool window width");
         int resultHeight = plate.getHeight() / windowHeight;
@@ -182,16 +179,14 @@ public class PoolingLayer implements PlateLayer {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("\n------\tPooling Layer\t------\n\n");
-        builder.append(String.format("Window height: %d\n", windowHeight));
-        builder.append(String.format("Window width: %d\n", windowWidth));
-        builder.append("\n\t------------\t\n");
-        return builder.toString();
+        return  "\n------\tPooling Layer\t------\n\n" +
+                String.format("Window height: %d\n", windowHeight) +
+                String.format("Window width: %d\n", windowWidth) +
+                "\n\t------------\t\n";
     }
 
     /** Returns a new builder. */
-    public static Builder newBuilder() {
+    static Builder newBuilder() {
         return new Builder();
     }
 
@@ -199,7 +194,7 @@ public class PoolingLayer implements PlateLayer {
      * Simple builder pattern for creating PoolingLayers. (Not very helpful now, but later we may want to add other
      * parameters.)
      */
-    public static class Builder {
+    static class Builder {
         private int windowHeight = 0;
         private int windowWidth = 0;
         private int numWindows = 0;
@@ -207,7 +202,7 @@ public class PoolingLayer implements PlateLayer {
         private Builder() {
         }
 
-        public Builder setWindowSize(int height, int width) {
+        Builder setWindowSize(int height, int width) {
             checkPositive(height, "Window height", false);
             checkPositive(width, "Window width", false);
             this.windowHeight = height;
@@ -215,12 +210,12 @@ public class PoolingLayer implements PlateLayer {
             return this;
         }
         
-        public Builder setNumWindows(int numWindows) {
+        Builder setNumWindows(int numWindows) {
         	this.numWindows = numWindows;
         	return this;
         }
 
-        public PoolingLayer build() {
+        PoolingLayer build() {
             checkPositive(windowHeight, "Window height", true);
             checkPositive(windowWidth, "Window width", true);
             return new PoolingLayer(numWindows, windowHeight, windowWidth);

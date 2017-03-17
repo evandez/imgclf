@@ -88,7 +88,7 @@ public class FullyConnectedLayer {
      * Given the error from the previous layer, update the weights and return the error
      * for this layer.
      */
-    public double[] propagateError(double[] proppedDelta, double learningRate) {
+    double[] propagateError(double[] proppedDelta, double learningRate) {
         if (proppedDelta.length != weights.length) {
             throw new IllegalArgumentException(
                     String.format(
@@ -135,29 +135,26 @@ public class FullyConnectedLayer {
     }
     
     /** Saves the current weights in an auxiliary array. */
-    public void saveWeights() { doubleArrayCopy2D(weights, savedWeights); }
+    void saveWeights() { doubleArrayCopy2D(weights, savedWeights); }
     
     /** Restores the weights from the last save. */
-    public void restoreWeights() { doubleArrayCopy2D(savedWeights, weights); }
+    void restoreWeights() { doubleArrayCopy2D(savedWeights, weights); }
 	
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("\n------\tFully Connected Layer\t------\n\n");
-		builder.append(
-				String.format("Number of inputs: %d (plus a bias)\n", weights[0].length - 1));
-		builder.append(String.format("Number of nodes: %d\n", weights.length));
-		builder.append(String.format("Activation function: %s\n", activation.toString()));
-		builder.append(String.format("Dropout rate: %.2f", dropoutRate));
-		builder.append("\n\t------------\t\n");
-		return builder.toString();
+        return "\n------\tFully Connected Layer\t------\n\n" +
+                String.format("Number of inputs: %d (plus a bias)\n", weights[0].length - 1) +
+                String.format("Number of nodes: %d\n", weights.length) +
+                String.format("Activation function: %s\n", activation.toString()) +
+                String.format("Dropout rate: %.2f", dropoutRate) +
+                "\n\t------------\t\n";
 	}
 	
 	/** Returns a new builder. */
-	public static Builder newBuilder() { return new Builder(); }
+	static Builder newBuilder() { return new Builder(); }
 	
 	/** Simple builder pattern for organizing parameters. */
-	public static class Builder {
+	static class Builder {
 		private ActivationFunction func = null;
 		private int numInputs = 0;
 		private int numNodes = 0;
@@ -165,25 +162,25 @@ public class FullyConnectedLayer {
 		
 		private Builder() {}
 
-		public Builder setActivationFunction(ActivationFunction func) {
+		Builder setActivationFunction(ActivationFunction func) {
 			checkNotNull(func, "Fully connected activation function");
 			this.func = func;
 			return this;
 		}
 		
-		public Builder setNumInputs(int numInputs) {
+		Builder setNumInputs(int numInputs) {
 			checkPositive(numInputs, "Number of fully connected inputs", false);
 			this.numInputs = numInputs;
 			return this;
 		}
 		
-		public Builder setNumNodes(int numNodes) {
+		Builder setNumNodes(int numNodes) {
 			checkPositive(numNodes, "Number of fully connected nodes", false);
 			this.numNodes = numNodes;
 			return this;
 		}
 		
-		public Builder setDropoutRate(double dropoutRate) {
+		Builder setDropoutRate(double dropoutRate) {
 			if (dropoutRate < 0 || dropoutRate > 1) {
         		throw new IllegalArgumentException(
         				String.format("Invalid dropout rate of %.2f\n", dropoutRate));
@@ -192,7 +189,7 @@ public class FullyConnectedLayer {
 			return this;
 		}
 		
-		public FullyConnectedLayer build() {
+		FullyConnectedLayer build() {
 			checkNotNull(func, "Fully connected activation function");
 			checkPositive(numInputs, "Number of fully connected inputs", true);
 			checkPositive(numNodes, "Number of fully connected nodes", true);

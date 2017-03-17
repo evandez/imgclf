@@ -1,14 +1,11 @@
 package v2;
 
-import static v2.Util.checkNotEmpty;
-import static v2.Util.checkNotNull;
-import static v2.Util.checkPositive;
-import static v2.Util.tensorSubtract;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import static v2.Util.*;
 
 /**
  * A convolutional neural network that supports arbitrary convolutional and pooling layers,
@@ -47,22 +44,20 @@ public class ConvolutionalNeuralNetwork {
     }
 
     /** Trains the CNN with the given training data and tuning data. */
-    public void train(Dataset trainSet, Dataset tuneSet, boolean verbose) {
+    void train(Dataset trainSet, Dataset tuneSet, boolean verbose) {
         Collections.shuffle(trainSet.getImages());
-        double bestAccuracy = 0.0;
-        double prevAccuracy = 0.0;
-        double currAccuracy = 0.0;
+        double bestAccuracy = 0.0, prevAccuracy = 0.0, currAccuracy;
         for (int epoch = 1; epoch <= maxEpochs; epoch++) {
             trainSingleEpoch(trainSet);
-            currAccuracy = test(tuneSet, false);
 
-            if (verbose) {
+            currAccuracy = test(tuneSet, false, (epoch % 10 == 0));
+
+            if (verbose)
                 System.out.printf(
                         "Epoch %d completed with train accuracy of %.9f and tune accuracy of %.9f\n",
                         epoch,
-                        test(trainSet, false),
+                        test(trainSet, false, false),
                         currAccuracy);
-            }
 
             if (currAccuracy > bestAccuracy) {
             	saveLayerStates();
@@ -133,28 +128,39 @@ public class ConvolutionalNeuralNetwork {
      *
      * Here, accuracy is numCorrectlyClassified/numExamples.
      */
-    public double test(Dataset testSet, boolean verbose) {
+    double test(Dataset testSet, boolean verbose, boolean outputConfusionMatrix) {
         int errCount = 0;
+        int[][] confusionMatrix = new int[classes.size()][classes.size()];
         for (Instance img : testSet.getImages()) {
             String predicted = classify(img);
-            if (!predicted.equals(img.getLabel())) {
+            if (!predicted.equals(img.getLabel()))
                 errCount++;
-            }
-
-            if (verbose) {
-                System.out.printf("Predicted: %s\t\tActual:%s\n", predicted, img.getLabel());
-            }
+            if (outputConfusionMatrix)
+                confusionMatrix[classes.indexOf(predicted)][classes.indexOf(img.getLabel())]++;
+            if (verbose)
+                System.out.printf("Predicted: %13s\t\tActual:%13s\n", predicted, img.getLabel());
         }
 
         double accuracy = ((double) (testSet.getSize() - errCount)) / testSet.getSize();
         if (verbose) {
             System.out.printf("Final accuracy was %.9f\n", accuracy);
         }
+
+        if (outputConfusionMatrix) {
+            // Output the confusion matrix
+            System.out.println("Confusion Matrix for Tuning set: ");
+            for (int[] matrixRow : confusionMatrix) {
+                for (int confusionMatrixElement : matrixRow)
+                    System.out.format("%3d", confusionMatrixElement);
+                System.out.println();
+            }
+        }
+
         return accuracy;
     }
 
     /** Returns the predicted label for the image. */
-    public String classify(Instance img) {
+    private String classify(Instance img) {
         double[] probs = computeOutput(img, false /* not currently training */);
         double maxProb = -1;
         int bestIndex = -1;
@@ -264,7 +270,6 @@ public class ConvolutionalNeuralNetwork {
 
     /** Unpack the 1D double array into a list of plates (3D double tensors). */
     private static List<Plate> unpackPlates(double[] packedPlates, int plateHeight, int plateWidth) {
-        // TODO: Implement this method.
         List<Plate> plates = new ArrayList<>();
         int k = 0;
         while (k < packedPlates.length) {
@@ -289,7 +294,7 @@ public class ConvolutionalNeuralNetwork {
     }
 
     /** Returns a new builder. */
-    public static Builder newBuilder() { return new Builder(); }
+    static Builder newBuilder() { return new Builder(); }
 
     /** A builder pattern for managing the many parameters of the network. */
     public static class Builder {
@@ -308,23 +313,23 @@ public class ConvolutionalNeuralNetwork {
 
         private Builder() {}
 
-        public Builder setInputHeight(int height) {
+        Builder setInputHeight(int height) {
             checkPositive(height, "Input height", false);
             this.inputHeight = height;
             return this;
         }
 
-        public Builder setInputWidth(int width) {
+        Builder setInputWidth(int width) {
             checkPositive(width, "Input width", false);
             this.inputWidth = width;
             return this;
         }
 
-        public Builder appendConvolutionLayer(ConvolutionLayer layer) {
+        Builder appendConvolutionLayer(ConvolutionLayer layer) {
             return appendPlateLayer(layer);
         }
 
-        public Builder appendPoolingLayer(PoolingLayer layer) {
+        Builder appendPoolingLayer(PoolingLayer layer) {
             return appendPlateLayer(layer);
         }
 
@@ -334,50 +339,50 @@ public class ConvolutionalNeuralNetwork {
             return this;
         }
 
-        public Builder setFullyConnectedWidth(int width) {
+        Builder setFullyConnectedWidth(int width) {
             checkPositive(width, "Fully connected width", false);
             this.fullyConnectedWidth = width;
             return this;
         }
 
-        public Builder setFullyConnectedDepth(int depth) {
+        Builder setFullyConnectedDepth(int depth) {
             checkPositive(depth, "Fully connected depth", false);
             this.fullyConnectedDepth = depth;
             return this;
         }
 
-        public Builder setFullyConnectedActivationFunction(ActivationFunction fcActivation) {
+        Builder setFullyConnectedActivationFunction(ActivationFunction fcActivation) {
             checkNotNull(fcActivation, "Fully connected activation function");
             this.fcActivation = fcActivation;
             return this;
         }
 
-        public Builder setClasses(List<String> classes) {
+        Builder setClasses(List<String> classes) {
             checkNotNull(classes, "Classes");
             checkNotEmpty(classes, "Classes", false);
             this.classes = classes;
             return this;
         }
 
-        public Builder setMinEpochs(int minEpochs) {
+        Builder setMinEpochs(int minEpochs) {
             checkPositive(minEpochs, "Min epochs", false);
             this.minEpochs = minEpochs;
             return this;
         }
 
-        public Builder setMaxEpochs(int maxEpochs) {
+        Builder setMaxEpochs(int maxEpochs) {
             checkPositive(maxEpochs, "Max epochs", false);
             this.maxEpochs = maxEpochs;
             return this;
         }
 
-        public Builder setLearningRate(double learningRate) {
+        Builder setLearningRate(double learningRate) {
             checkPositive(learningRate, "Learning rate", false);
             this.learningRate = learningRate;
             return this;
         }
         
-        public Builder setDropoutRate(double dropoutRate) {
+        Builder setDropoutRate(double dropoutRate) {
         	if (dropoutRate < 0 || dropoutRate > 1) {
         		throw new IllegalArgumentException(
         				String.format("Invalid dropout rate of %.2f\n", dropoutRate));
@@ -391,7 +396,7 @@ public class ConvolutionalNeuralNetwork {
             return this;
         }
 
-        public ConvolutionalNeuralNetwork build() {
+        ConvolutionalNeuralNetwork build() {
             // No check for nonemptyness of plate layers - if none provided, use fully connected.
             checkNotNull(classes, "Classes");
             checkPositive(inputHeight, "Input height", true);

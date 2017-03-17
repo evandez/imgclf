@@ -1,12 +1,12 @@
 package v2;
-/**
- * 
- * This is the class for each image instance
- */
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+
+/**
+ * This is the class for each image instance
+ */
 
 public class Instance {
 	// store the bufferedImage
@@ -19,7 +19,7 @@ public class Instance {
 	// Constructor
 	// given the bufferedimage and its class label
 	// get the
-	public Instance(BufferedImage image, String label) {
+	Instance(BufferedImage image, String label) {
 		this.image = image;
 		this.label = label;
 		width = image.getWidth();
@@ -62,22 +62,22 @@ public class Instance {
 	}
 
 	// get separate red channel image
-	public int[][] getRedChannel() {
+	int[][] getRedChannel() {
 		return red_channel;
 	}
 
 	// get separate green channel image
-	public int[][] getGreenChannel() {
+	int[][] getGreenChannel() {
 		return green_channel;
 	}
 
 	// get separate blue channel image
-	public int[][] getBlueChannel() {
+	int[][] getBlueChannel() {
 		return blue_channel;
 	}
 
 	// get the gray scale image
-	public int[][] getGrayImage() {
+	int[][] getGrayImage() {
 		// Gray filter
 		BufferedImage grayImage = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
 		byte[] dstBuff = ((DataBufferByte) grayImage.getRaster().getDataBuffer()).getData();
@@ -94,11 +94,11 @@ public class Instance {
 		return width;
 	}
 
-	public int getHeight() {
+	int getHeight() {
 		return height;
 	}
 
-	public String getLabel() {
+	String getLabel() {
 		return label;
 	}
 }

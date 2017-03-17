@@ -1,19 +1,19 @@
 package v2;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * @Author: Yuting Liu
  * This is the dataset class that holds in the whole dataset
- * 
+ *
  */
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class Dataset {
 	// the list of all instances
 	private ArrayList<Instance> instances;
 
-	public Dataset() {
+	Dataset() {
 		this.instances = new ArrayList<>();
 	}
 
@@ -28,7 +28,7 @@ public class Dataset {
 	}
 
 	// Return the list of images.
-	public List<Instance> getImages() {
+	List<Instance> getImages() {
 		return instances;
 	}
 }
