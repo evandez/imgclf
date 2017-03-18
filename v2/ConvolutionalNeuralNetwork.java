@@ -270,7 +270,9 @@ public class ConvolutionalNeuralNetwork {
      * with the fully connected layers.
      */
     private static double[] packPlates(List<Plate> plates) {
-        checkNotEmpty(plates, "Plates to pack", false);
+    	if (!Lab3.RUNNING) {
+    		checkNotEmpty(plates, "Plates to pack", false);
+    	}
         int flattenedPlateSize = plates.get(0).getTotalNumValues();
         double[] result = new double[flattenedPlateSize * plates.size()];
         for (int i = 0; i < plates.size(); i++) {

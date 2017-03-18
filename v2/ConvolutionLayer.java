@@ -85,15 +85,19 @@ public class ConvolutionLayer implements PlateLayer {
     
     @Override
     public List<Plate> computeOutput(List<Plate> input) {
-        checkNotNull(input, "Convolution layer input");
-        checkNotEmpty(input, "Convolution layer input", false);
+    	if (!Lab3.RUNNING) {
+    		checkNotNull(input, "Convolution layer input");
+    		checkNotEmpty(input, "Convolution layer input", false);
+    	}
         previousInput = deepCopyPlates(input);
-        int maskHeight = convolutions.get(0).getHeight();
-        int maskWidth = convolutions.get(0).getWidth();
         if (output == null) {
+        	int maskHeight = convolutions.get(0).getHeight();
+        	int maskWidth = convolutions.get(0).getWidth();
+        	int inputHeight = input.get(0).getHeight();
+        	int inputWidth = input.get(0).getWidth();
         	output = new ArrayList<>();
         	for (int i = 0; i < convolutions.size() / numChannels; i++) {
-        		output.add(new Plate(new double[input.get(0).getHeight() - maskHeight + 1][input.get(0).getWidth() - maskWidth + 1]));
+        		output.add(new Plate(new double[inputHeight - maskHeight + 1][inputWidth - maskWidth + 1]));
         	}
         } else {
         	for (int i = 0; i < output.size(); i++) {
@@ -125,21 +129,27 @@ public class ConvolutionLayer implements PlateLayer {
         if (update == null) {
         	update = new double[convolutions.get(0).getHeight()][convolutions.get(0).getWidth()];
         }
+        // hopefully these are static
+        int errorHeight = errors.get(0).getHeight();
+        int errorWidth = errors.get(0).getWidth();
+        int convolutionHeight = convolutions.get(0).getHeight();
+        int convolutionWidth = convolutions.get(0).getWidth();
         // Update the convolution values
         for (int i = 0; i < previousInput.size(); i++) {
+        	Plate previous = previousInput.get(i);
             // Loop over the plate
-            for (int j = 0; j <= errors.get(i).getHeight() - convolutions.get(i).getHeight(); j++) {
-                for (int k = 0; k <= errors.get(i).getWidth() - convolutions.get(i).getWidth(); k++) {
-                    for (int l = 0; l < convolutions.get(i).getHeight(); l++) {
-                        for (int m = 0; l < convolutions.get(i).getHeight(); l++) {
+            for (int j = 0; j <= errorHeight - convolutionHeight; j++) {
+                for (int k = 0; k <= errorWidth - convolutionWidth; k++) {
+                    for (int l = 0; l < convolutionHeight; l++) {
+                        for (int m = 0; l < convolutionWidth; l++) {
                             if (update[l][m] == 0)
                                 update[l][m] = 1;
-                            update[l][m] = previousInput.get(i).valueAt(j+l, k+m)
-                                    * errors.get(i).valueAt(j+l, k+m)
+                            update[l][m] = previous.valueAt(j + l, k + m)
+                                    * errors.get(i).valueAt(j + l, k + m)
                                     * learningRate;
                         }
                     }
-                    convolutions.get(i).setValues(tensorAdd(convolutions.get(i).getValues(), update, false));
+                    tensorAdd(convolutions.get(i).getValues(), update, true);
                 }
             }
         }
@@ -244,9 +254,11 @@ public class ConvolutionLayer implements PlateLayer {
         }
 
         Builder setConvolutionSize(int numChannels, int height, int width) {
-            checkPositive(numChannels, "Convolution channels", false);
-            checkPositive(height, "Convolution height", false);
-            checkPositive(width, "Convolution width", false);
+        	if (!Lab3.RUNNING) {
+        		checkPositive(numChannels, "Convolution channels", false);
+        		checkPositive(height, "Convolution height", false);
+        		checkPositive(width, "Convolution width", false);
+        	}
             this.numChannels = numChannels;
             this.convolutionHeight = height;
             this.convolutionWidth = width;
@@ -254,16 +266,20 @@ public class ConvolutionLayer implements PlateLayer {
         }
 
         Builder setNumConvolutions(int numConvolutions) {
-            checkPositive(numConvolutions, "Number of convolutions", false);
+        	if (!Lab3.RUNNING) {
+        		checkPositive(numConvolutions, "Number of convolutions", false);
+        	}
             this.numConvolutions = numConvolutions;
             return this;
         }
 
         ConvolutionLayer build() {
-            checkPositive(numChannels, "Convolution channels", true);
-            checkPositive(convolutionHeight, "Convolution height", true);
-            checkPositive(convolutionWidth, "Convolution width", true);
-            checkPositive(numConvolutions, "Number of convolutions", true);
+        	if (!Lab3.RUNNING) {
+        		checkPositive(numChannels, "Convolution channels", true);
+        		checkPositive(convolutionHeight, "Convolution height", true);
+        		checkPositive(convolutionWidth, "Convolution width", true);
+        		checkPositive(numConvolutions, "Number of convolutions", true);
+        	}
             List<Plate> convolutions = new ArrayList<>();
             for (int i = 0; i < numConvolutions; i++) {
                 for (int j = 0; j < numChannels; j++) {
