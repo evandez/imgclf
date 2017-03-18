@@ -70,7 +70,7 @@ public class Lab3 {
 	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
-	private static double eta = 0.01, fractionOfTrainingToUse = 1.00, dropoutRate = 0;
+	private static double eta = .1, fractionOfTrainingToUse = 1.00, dropoutRate = 0;
 
 	// Feel free to set to a different value.
 	private static int minEpochs = 1000;
@@ -801,6 +801,8 @@ public class Lab3 {
 
 		System.out.println(
 				"******\tDeep CNN training has begun." + " Updates will be provided after each epoch.\t******");
+		System.out.println("Learning rate: " + eta);
+		System.out.println("Leaky slope  : " + ActivationFunction.RELU.applyDerivative(-1));
 		cnn.train(trainSet, tuneSet, true);
 
 		System.out.println("\n******\tDeep CNN testing has begun.\t******");

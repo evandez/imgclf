@@ -106,6 +106,7 @@ public class FullyConnectedLayer {
             	}
                 delta[j] += proppedDelta[i] * weights[i][j] * activation.applyDerivative(lastInput[j]);
             }
+            delta[j] /= delta.length;
         }
 
         // Update the weights using the propped delta.

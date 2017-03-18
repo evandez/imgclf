@@ -132,8 +132,8 @@ public class ConvolutionLayer implements PlateLayer {
             // convolve each input image, sum the output, add the new plate
     		for (int j = 0; j < input.size(); j++) {
     			int convIndex = numChannels == 4 ? i * numChannels + j : i;
-    			Plate mask = convolutions.get(convIndex);
-    			if (currentlyTraining) {
+    			Plate mask = convolutions.get(convIndex).rot180();
+    			if (currentlyTraining && dropoutRate != 0) {
     				mask = new Plate(Util.scalarMultiply(1 - dropoutRate, mask.getValues(), false));
     			}
     			Util.tensorAdd(
@@ -176,8 +176,6 @@ public class ConvolutionLayer implements PlateLayer {
 	                for (int k = 0; k <= errorWidth - convolutionWidth; k++) {
 	                    for (int l = 0; l < convolutionHeight; l++) {
 	                        for (int m = 0; l < convolutionWidth; l++) {
-	//                            if (update[l][m] == 0)
-	//                                update[l][m] = 1;
 	                        	if (!activeNodes.get(i)[l][m]) {
 	                            	continue;
 	                            }
@@ -186,7 +184,6 @@ public class ConvolutionLayer implements PlateLayer {
 	                                    * learningRate;
 	                        }
 	                    }
-	//                    tensorAdd(convolutions.get(i).getValues(), update, true);
 	                }
 	            }
         	}
