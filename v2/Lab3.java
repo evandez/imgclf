@@ -34,7 +34,7 @@ public class Lab3 {
 	// or 64x64; this can reduce your network
 	// size and speed up debugging runs. ALL IMAGES IN A TRAINING RUN SHOULD BE
 	// THE *SAME* SIZE.
-	private static int imageSize = 64;
+	private static int imageSize = 32;
 
 	// We'll hardwire these in, but more robust code would not do so.
 	private static enum Category {
@@ -71,7 +71,7 @@ public class Lab3 {
 	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
-	private static double eta = 0.001, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
+	private static double eta = 0.0001, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
 	private static int minEpochs = 500;
@@ -222,8 +222,6 @@ public class Lab3 {
 					countOfCreatedTrainingImages[convertCategoryStringToEnum(createdTrainImage.getLabel()).ordinal()]++;
 					count_trainsetExtrasKept++;
 					trainset.add(createdTrainImage);
-					System.out.println("The trainset NOW contains " + comma(trainset.getSize()) + " examples. Took "
-							+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + ".");
 				}
 			}
 			for (Category cat : Category.values()) {
@@ -758,14 +756,14 @@ public class Lab3 {
 				.appendConvolutionLayer(
 						ConvolutionLayer.newBuilder().setConvolutionSize(1, 5, 5).setNumConvolutions(20).build())
 				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).setNumWindows(20).build())
-				 .appendConvolutionLayer(ConvolutionLayer.newBuilder()
-				 .setConvolutionSize(1, 5, 5)
-				 .setNumConvolutions(20)
-				 .build())
-				 .appendPoolingLayer(PoolingLayer.newBuilder()
-				 .setWindowSize(2, 2)
-				 .setNumWindows(20)
-				 .build())
+//				 .appendConvolutionLayer(ConvolutionLayer.newBuilder()
+//				 .setConvolutionSize(1, 5, 5)
+//				 .setNumConvolutions(20)
+//				 .build())
+//				 .appendPoolingLayer(PoolingLayer.newBuilder()
+//				 .setWindowSize(2, 2)
+//				 .setNumWindows(20)
+//				 .build())
 				.setFullyConnectedDepth(1) // i.e., one hidden layer.
 				.setFullyConnectedWidth(300).setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
 				.setClasses(categoryNames).setMinEpochs(minEpochs).setMaxEpochs(maxEpochs).setLearningRate(eta)
