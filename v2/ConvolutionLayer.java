@@ -99,7 +99,7 @@ public class ConvolutionLayer implements PlateLayer {
     public List<Plate> computeOutput(List<Plate> input, boolean currentlyTraining) {
         checkNotNull(input, "Convolution layer input");
         checkNotEmpty(input, "Convolution layer input", false);
-        
+
         previousInput = deepCopyPlates(input);
         
         if (currentlyTraining) {
