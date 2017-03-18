@@ -6,8 +6,8 @@ import java.util.function.Function;
 
 /** Represents activation functions for any node. */
 public enum ActivationFunction {
-	RELU(   /* function */   x -> (x > 0) ? 1.0 * x : Math.pow(10, -4) * x,
-			/* derivative */ x -> (x > 0) ? 1.0     : Math.pow(10, -4)),
+	RELU(   /* function */   x -> (x > 0) ? 1.0 * x : Math.pow(10, -6) * x,
+			/* derivative */ x -> (x > 0) ? 1.0     : Math.pow(10, -6)),
 	SIGMOID(/* function */   x -> 1.0 / (1.0 + Math.exp(-x)),
 			/* derivative */ x -> (x * (1.0 - x)));
 
