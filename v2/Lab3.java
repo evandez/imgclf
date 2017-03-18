@@ -71,7 +71,7 @@ public class Lab3 {
 	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
-	private static double eta = 0.0001, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
+	private static double eta = .0001, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
 	private static int minEpochs = 500;
@@ -79,16 +79,12 @@ public class Lab3 {
 
 	public static Dataset trainSet, tuneSet, testSet, trainSetExtras;
 
-	protected static final double shiftProbNumerator = 6.0; // 6.0 is the
-															// 'default.'
-	protected static final double probOfKeepingShiftedTrainsetImage = (shiftProbNumerator / 48.0); // This
-																									// 48
-																									// is
-																									// also
-																									// embedded
-																									// elsewhere!
+	// 6.0 is the 'default.'
+	protected static final double shiftProbNumerator = 6.0;
+	// this 48 is also embedded elsewhere
+	protected static final double probOfKeepingShiftedTrainsetImage = (shiftProbNumerator / 48.0);
 	protected static final boolean perturbPerturbedImages = false;
-	protected final static boolean createExtraTrainingExamples = true;
+	protected final static boolean createExtraTrainingExamples = false;
 
 	public static void main(String[] args) {
 		String trainDirectory = "images/trainset/";
@@ -145,15 +141,9 @@ public class Lab3 {
 		System.out.println("The  tuneset contains " + comma(testset.getSize()) + " examples.  Took "
 				+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + ".");
 
-		// Now train a Deep ANN. You might wish to first use your Lab 2 code
-		// here and see how one layer of HUs does. Maybe
-		// even try your perceptron code. We are providing code that converts
-		// images to feature vectors. Feel free to
-		// discard or modify.
 		start = System.currentTimeMillis();
 
 		if (createExtraTrainingExamples) {
-
 			start = System.currentTimeMillis();
 
 			// Flipping watches will mess up the digits on the watch faces, but
@@ -162,7 +152,7 @@ public class Lab3 {
 				createMoreImagesFromThisImage(origTrainImage, 1.00);
 			}
 			if (perturbPerturbedImages) {
-				Dataset copyOfExtras = new Dataset(); 
+				Dataset copyOfExtras = new Dataset();
 				for (Instance perturbedTrainImage : trainsetExtras.getImages()) {
 					copyOfExtras.add(perturbedTrainImage);
 				}
@@ -170,27 +160,8 @@ public class Lab3 {
 					createMoreImagesFromThisImage(perturbedTrainImage,
 							((perturbedTrainImage.getProvenance() == Instance.HowCreated.FlippedLeftToRight
 									|| perturbedTrainImage.getProvenance() == Instance.HowCreated.FlippedTopToBottom)
-											? 3.33 // Increase the odds of
-													// perturbing flipped images
-													// a bit, since fewer of
-													// those.
-											: 0.66) // Aim to create about one
-													// more perturbed image per
-													// originally perturbed
-													// image.
-									/ (0.5 + 6.0 + shiftProbNumerator)); // The
-																			// 0.5
-																			// is
-																			// for
-																			// the
-																			// chance
-																			// of
-																			// flip-flopping.
-																			// The
-																			// 6.0
-																			// is
-																			// from
-																			// rotations.
+											? 3.33 : 0.66)
+									/ (0.5 + 6.0 + shiftProbNumerator));
 				}
 			}
 
@@ -272,10 +243,6 @@ public class Lab3 {
 		}
 		boolean rotateImages = true;
 		if (rotateImages && trainImage.getProvenance() != Instance.HowCreated.Rotated) {
-			// Instance rotated = origTrainImage.rotateImageThisManyDegrees(3);
-			// origTrainImage.display2D(origTrainImage.getGrayImage());
-			// rotated.display2D( rotated.getGrayImage()); waitForEnter();
-
 			if (random() <= probOfKeeping)
 				trainSetExtras.add(trainImage.rotateImageThisManyDegrees(3));
 			if (random() <= probOfKeeping)
@@ -284,15 +251,8 @@ public class Lab3 {
 				trainSetExtras.add(trainImage.rotateImageThisManyDegrees(4));
 			if (random() <= probOfKeeping)
 				trainSetExtras.add(trainImage.rotateImageThisManyDegrees(-4));
-			if (!"butterfly".equals(trainImage.getLabel()) && // Butterflies all
-																// have the
-																// heads at the
-																// top, so don't
-																// rotate too
-																// much.
-					!"flower".equals(trainImage.getLabel()) && // Ditto for
-																// flowers and
-																// starfish.
+			if (!"butterfly".equals(trainImage.getLabel()) && 
+					!"flower".equals(trainImage.getLabel()) && 
 					!"starfish".equals(trainImage.getLabel())) {
 				if (random() <= probOfKeeping)
 					trainSetExtras.add(trainImage.rotateImageThisManyDegrees(5));
@@ -305,8 +265,6 @@ public class Lab3 {
 					trainSetExtras.add(trainImage.rotateImageThisManyDegrees(-2));
 			}
 		}
-		// Would be good to also shift and rotate the flipped examples, but more
-		// complex code needed.
 		if (trainImage.getProvenance() != Instance.HowCreated.Shifted) {
 			for (int shiftX = -3; shiftX <= 3; shiftX++) {
 				for (int shiftY = -3; shiftY <= 3; shiftY++) {
@@ -531,18 +489,18 @@ public class Lab3 {
 		return truncate(millisec / 1000.0, digits) + " seconds";
 	}
 
-	public static String comma(int value) { // Always use separators (e.g.,
-											// "100,000").
+	public static String comma(int value) { 
+		// Always use separators (e.g., "100,000").
 		return String.format("%,d", value);
 	}
 
-	public static String comma(long value) { // Always use separators (e.g.,
-												// "100,000").
+	public static String comma(long value) { 
+		// Always use separators (e.g., "100,000").
 		return String.format("%,d", value);
 	}
 
-	public static String comma(double value) { // Always use separators (e.g.,
-												// "100,000").
+	public static String comma(double value) { 
+		// Always use separators (e.g., "100,000").
 		return String.format("%,f", value);
 	}
 
@@ -748,26 +706,90 @@ public class Lab3 {
 
 	private static int trainDeep(Vector<Vector<Double>> trainFeatureVectors, Vector<Vector<Double>> tuneFeatureVectors,
 			Vector<Vector<Double>> testFeatureVectors) {
-		ConvolutionalNeuralNetwork cnn = ConvolutionalNeuralNetwork.newBuilder().setInputHeight(imageSize)
-				.setInputWidth(imageSize)
-				.appendConvolutionLayer(
-						ConvolutionLayer.newBuilder().setConvolutionSize(4, 5, 5).setNumConvolutions(20).build())
-				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).setNumWindows(20).build())
-				.appendConvolutionLayer(
-						ConvolutionLayer.newBuilder().setConvolutionSize(1, 5, 5).setNumConvolutions(20).build())
-				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).setNumWindows(20).build())
-//				 .appendConvolutionLayer(ConvolutionLayer.newBuilder()
-//				 .setConvolutionSize(1, 5, 5)
-//				 .setNumConvolutions(20)
-//				 .build())
-//				 .appendPoolingLayer(PoolingLayer.newBuilder()
-//				 .setWindowSize(2, 2)
-//				 .setNumWindows(20)
-//				 .build())
-				.setFullyConnectedDepth(1) // i.e., one hidden layer.
-				.setFullyConnectedWidth(300).setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
-				.setClasses(categoryNames).setMinEpochs(minEpochs).setMaxEpochs(maxEpochs).setLearningRate(eta)
-				.setDropoutRate(dropoutRate).build();
+		ConvolutionalNeuralNetwork cnn ;
+		if (imageSize == 64) {
+			cnn = ConvolutionalNeuralNetwork
+					.newBuilder()
+					.setInputHeight(imageSize)
+					.setInputWidth(imageSize)
+					.appendConvolutionLayer(
+							ConvolutionLayer
+							.newBuilder()
+							.setConvolutionSize(4, 5, 5)
+							.setNumConvolutions(20)
+							.build())
+					.appendPoolingLayer(PoolingLayer
+							.newBuilder()
+							.setWindowSize(2, 2)
+							.setNumWindows(20)
+							.build())
+					.appendConvolutionLayer(
+							ConvolutionLayer
+							.newBuilder()
+							.setConvolutionSize(1, 5, 5)
+							.setNumConvolutions(20)
+							.build())
+					.appendPoolingLayer(PoolingLayer
+							.newBuilder()
+							.setWindowSize(2, 2)
+							.setNumWindows(20)
+							.build())
+					.appendConvolutionLayer(ConvolutionLayer.newBuilder()
+					.setConvolutionSize(1, 5, 5)
+					.setNumConvolutions(20)
+					.build())
+					.appendPoolingLayer(PoolingLayer.newBuilder()
+					.setWindowSize(2, 2)
+					.setNumWindows(20)
+					.build())
+					.setFullyConnectedDepth(1) // i.e., one hidden layer.
+					.setFullyConnectedWidth(300)
+					.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
+					.setClasses(categoryNames)
+					.setMinEpochs(minEpochs)
+					.setMaxEpochs(maxEpochs)
+					.setLearningRate(eta)
+					.setDropoutRate(dropoutRate)
+					.setUseRGB(useRGB)
+					.build();
+		} else {
+			cnn = ConvolutionalNeuralNetwork
+					.newBuilder()
+					.setInputHeight(imageSize)
+					.setInputWidth(imageSize)
+					.appendConvolutionLayer(
+							ConvolutionLayer
+							.newBuilder()
+							.setConvolutionSize(4, 5, 5)
+							.setNumConvolutions(20)
+							.build())
+					.appendPoolingLayer(PoolingLayer
+							.newBuilder()
+							.setWindowSize(2, 2)
+							.setNumWindows(20)
+							.build())
+					.appendConvolutionLayer(
+							ConvolutionLayer
+							.newBuilder()
+							.setConvolutionSize(1, 5, 5)
+							.setNumConvolutions(20)
+							.build())
+					.appendPoolingLayer(PoolingLayer
+							.newBuilder()
+							.setWindowSize(2, 2)
+							.setNumWindows(20)
+							.build())
+					.setFullyConnectedDepth(1) // i.e., one hidden layer.
+					.setFullyConnectedWidth(300)
+					.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
+					.setClasses(categoryNames)
+					.setMinEpochs(minEpochs)
+					.setMaxEpochs(maxEpochs)
+					.setLearningRate(eta)
+					.setDropoutRate(dropoutRate)
+					.setUseRGB(useRGB)
+					.build();
+		}
 
 		System.out.println("******\tDeep CNN constructed." + " The structure is described below.\t******");
 		System.out.println(cnn);
@@ -775,6 +797,7 @@ public class Lab3 {
 		System.out.println(
 				"******\tDeep CNN training has begun." + " Updates will be provided after each epoch.\t******");
 		System.out.println("Learning rate: " + eta);
+		// System.out.println("SIGMOID ALL");
 		cnn.train(trainSet, tuneSet, true);
 
 		System.out.println("\n******\tDeep CNN testing has begun.\t******");

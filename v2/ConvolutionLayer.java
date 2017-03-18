@@ -23,6 +23,9 @@ public class ConvolutionLayer implements PlateLayer {
     private int numOutputs;
     private int outputHeight;
     private int outputWidth;
+    private double[][] update;
+    private List<Plate> deltaOutput;
+    private List<Plate> output;
 
     private ConvolutionLayer(List<Plate> convolutions, int numChannels) {
         this.convolutions = convolutions;
@@ -79,43 +82,54 @@ public class ConvolutionLayer implements PlateLayer {
     		throw new RuntimeException("Cannot call calculateOutputWidth without arguments before calling it with arguments.");
     	}
     }
-
+    
     @Override
     public List<Plate> computeOutput(List<Plate> input) {
         checkNotNull(input, "Convolution layer input");
         checkNotEmpty(input, "Convolution layer input", false);
         previousInput = deepCopyPlates(input);
-        // Convolve each input with each mask.
-        List<Plate> output = new ArrayList<>();
-        Plate[] masks = new Plate[numChannels];
         int maskHeight = convolutions.get(0).getHeight();
         int maskWidth = convolutions.get(0).getWidth();
+        if (output == null) {
+        	output = new ArrayList<>();
+        	for (int i = 0; i < convolutions.size() / numChannels; i++) {
+        		output.add(new Plate(new double[input.get(0).getHeight() - maskHeight + 1][input.get(0).getWidth() - maskWidth + 1]));
+        	}
+        } else {
+        	for (int i = 0; i < output.size(); i++) {
+        		Util.clear(output.get(i).getValues());
+        	}
+        }
+        // Convolve each input with each mask.
         for (int i = 0; i < convolutions.size(); i += numChannels) {
-            double[][] values = new double[input.get(0).getHeight() - maskHeight + 1][input.get(0).getWidth() - maskWidth + 1];
             // convolve each input image, sum the output, add the new plate
             for (int j = 0; j < numChannels; j++) {
-                masks[j] = convolutions.get(i + j);
-                Util.tensorAdd(values, input.get(j).convolve(masks[j]).getValues(), true);
-                input.get(j);
+                Util.tensorAdd(
+                		output.get(i / numChannels).getValues(), 
+                		input.get(j).convolve(convolutions.get(i + j)).getValues(), 
+                		true);
             }
-            output.add((new Plate(values).applyActivation(ActivationFunction.RELU)));
+            output.get(i / numChannels).applyActivation(ActivationFunction.RELU);
         }
         previousOutput = deepCopyPlates(output);
         return output;
     }
+
 
     @Override
     public List<Plate> propagateError(List<Plate> errors, double learningRate) {
         if (errors.size() != previousOutput.size() || previousInput.isEmpty()) {
             throw new IllegalArgumentException("Bad propagation state.");
         }
-
+        
+        if (update == null) {
+        	update = new double[convolutions.get(0).getHeight()][convolutions.get(0).getWidth()];
+        }
         // Update the convolution values
         for (int i = 0; i < previousInput.size(); i++) {
             // Loop over the plate
             for (int j = 0; j <= errors.get(i).getHeight() - convolutions.get(i).getHeight(); j++) {
                 for (int k = 0; k <= errors.get(i).getWidth() - convolutions.get(i).getWidth(); k++) {
-                    double[][] update = new double[convolutions.get(i).getHeight()][convolutions.get(i).getWidth()];
                     for (int l = 0; l < convolutions.get(i).getHeight(); l++) {
                         for (int m = 0; l < convolutions.get(i).getHeight(); l++) {
                             if (update[l][m] == 0)
@@ -125,44 +139,43 @@ public class ConvolutionLayer implements PlateLayer {
                                     * learningRate;
                         }
                     }
-                    convolutions.get(i).setVals(tensorAdd(convolutions.get(i).getValues(), update, false));
+                    convolutions.get(i).setValues(tensorAdd(convolutions.get(i).getValues(), update, false));
                 }
             }
         }
 
         // Stores the delta values for all the plates in current layer
-        List<Plate> deltaOutput = new ArrayList<>(errors.size());
-        // Total error
-        double[][][] error = new double[errors.size()][][];
-        double[][][] delta = new double[error.length][][];
+        if (deltaOutput == null) {
+        	deltaOutput = new ArrayList<>(errors.size());
+        	for (int i = 0; i < errors.size(); i++) {
+        		deltaOutput.add(new Plate(new double[previousInput.get(0).getHeight()][previousInput.get(0).getWidth()]));
+        	}
+        } else {
+        	for (int i = 0; i < deltaOutput.size(); i++) {
+        		Util.clear(deltaOutput.get(i).getValues());
+        	}
+        }
 
         if (previousInput.size() == errors.size()) {
             for (int i = 0; i < errors.size(); i++) {
-                error[i] = new double[previousInput.get(i).getHeight()][previousInput.get(i).getWidth()];
-
-                // Loop over the entire plate and update weights (convolution values) using the equation
-                // given in Russel and Norvig (check Lab 3 slides)
-                delta[i] = new double[previousInput.get(i).getHeight()][previousInput.get(i).getWidth()];
-
-                for (int row = 0; row <= delta[i].length - convolutions.get(i).getHeight(); row++) {
-                    for (int col = 0; col <= delta[i][row].length - convolutions.get(i).getWidth(); col++) {
+            	double[][] delta = deltaOutput.get(i).getValues();
+            	Plate rotatedConvolution = convolutions.get(i).rot180();
+                for (int row = 0; row <= delta.length - convolutions.get(i).getHeight(); row++) {
+                    for (int col = 0; col <= delta[row].length - convolutions.get(i).getWidth(); col++) {
                         for (int kernelRow = 0; kernelRow < convolutions.get(i).getHeight(); kernelRow++) {
                             for (int kernelCol = 0; kernelCol < convolutions.get(i).getWidth(); kernelCol++) {
-                                delta[i][row + kernelRow][col + kernelCol] += errors.get(i).valueAt(row, col)
-                                        * convolutions.get(i).rot180().valueAt(kernelRow, kernelCol);
+                                delta[row + kernelRow][col + kernelCol] += errors.get(i).valueAt(row, col)
+                                        * rotatedConvolution.valueAt(kernelRow, kernelCol);
                             }
                         }
                     }
                 }
 
-                for (int row = 0; row < delta[i].length; row++) {
-                    for (int col = 0; col < delta[i][row].length; col++) {
-                        delta[i][row][col] *= ActivationFunction.RELU.applyDerivative(previousInput.get(i).valueAt(row, col));
+                for (int row = 0; row < delta.length; row++) {
+                    for (int col = 0; col < delta[row].length; col++) {
+                        delta[row][col] *= ActivationFunction.RELU.applyDerivative(previousInput.get(i).valueAt(row, col));
                     }
                 }
-
-                deltaOutput.add(new Plate(delta[i]));
-//                System.out.println(deltaOutput.get(deltaOutput.size() - 1).toString());
             }
             return deltaOutput;
         } else {
