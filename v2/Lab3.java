@@ -71,11 +71,11 @@ public class Lab3 {
 	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
-	private static double eta = .0001, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
+	private static double eta = .1, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
-	private static int minEpochs = 500;
-	private static int maxEpochs = 2000;
+	private static int minEpochs = 1000;
+	private static int maxEpochs = 5000;
 
 	public static Dataset trainSet, tuneSet, testSet, trainSetExtras;
 
@@ -84,7 +84,7 @@ public class Lab3 {
 	// this 48 is also embedded elsewhere
 	protected static final double probOfKeepingShiftedTrainsetImage = (shiftProbNumerator / 48.0);
 	protected static final boolean perturbPerturbedImages = false;
-	protected final static boolean createExtraTrainingExamples = false;
+	protected final static boolean createExtraTrainingExamples = true;
 	
 	protected static boolean RUNNING = true;
 
