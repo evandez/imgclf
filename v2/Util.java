@@ -210,16 +210,39 @@ public final class Util {
 		}
 	}
 	
-	public static void printMemory() {
+	static void clear(double[][][] matrix) {
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[i].length; j++) {
+				for (int k = 0; k < matrix[i][j].length; k++) {
+					matrix[i][j][k] = 0;
+				}
+			}
+		}
+	}
+	
+	static void clear(double[][] matrix) {
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[i].length; j++) {
+				matrix[i][j] = 0;
+			}
+		}
+	}
+	
+	static void clear(boolean[][] matrix) {
+		for (int i = 0; i < matrix.length; i++) {
+			for (int j = 0; j < matrix[i].length; j++) {
+				matrix[i][j] = false;
+			}
+		}
+	}
+	
+	static void printMemory() {
 		// Get current size of heap in bytes
 		long heapSize = Runtime.getRuntime().totalMemory(); 
-
 		// Get amount of free memory within the heap in bytes. This size will increase // after garbage collection and decrease as new objects are created.
 		long heapFreeSize = Runtime.getRuntime().freeMemory(); 
-
 		// Get maximum size of heap in bytes. The heap cannot grow beyond this size.// Any attempt will result in an OutOfMemoryException.
 		long heapMaxSize = Runtime.getRuntime().maxMemory();
-		
 		System.out.println("\nCurrent Heap Size: " + heapSize / Math.pow(2,20) + " MB");
 		System.out.println("Free Heap Size   : " + heapFreeSize / Math.pow(2, 20) + " MB");
 		System.out.println("Max Heap Size    : " + heapMaxSize / Math.pow(2, 20) + " MB");

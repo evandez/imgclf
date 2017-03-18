@@ -1,11 +1,13 @@
 package v2;
 
+import static v2.Util.checkNotEmpty;
+import static v2.Util.checkNotNull;
+import static v2.Util.checkPositive;
+import static v2.Util.tensorSubtract;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-
-import static v2.Util.*;
 
 /**
  * A convolutional neural network that supports arbitrary convolutional and pooling layers,
@@ -45,9 +47,9 @@ public class ConvolutionalNeuralNetwork {
 
     /** Trains the CNN with the given training data and tuning data. */
     void train(Dataset trainSet, Dataset tuneSet, boolean verbose) {
-        Collections.shuffle(trainSet.getImages());
         double bestAccuracy = 0.0, prevAccuracy = 0.0, currAccuracy;
         for (int epoch = 1; epoch <= maxEpochs; epoch++) {
+        	trainSet = shuffle(trainSet);
             trainSingleEpoch(trainSet);
 
             currAccuracy = test(tuneSet, false, (epoch % 10 == 0));
@@ -70,7 +72,23 @@ public class ConvolutionalNeuralNetwork {
             prevAccuracy = currAccuracy;
         }
     }
-
+    
+	public static Dataset shuffle(Dataset original) {
+		Dataset shuffled = new Dataset();
+		List<Instance> instances = original.getImages();
+		boolean[] positionsTaken = new boolean[instances.size()];
+		int position = 0;
+		for (int i = 0; i < instances.size(); i++) {
+			do {
+				position = (int) (Util.RNG.nextDouble() * positionsTaken.length);
+			} while (positionsTaken[position]);
+			
+			shuffled.add(instances.get(position));
+			positionsTaken[position] = true;
+		}
+		return shuffled;
+	}
+    
     /** Passes all images in the dataset through the network and backpropagates the errors. */
     private void trainSingleEpoch(Dataset trainSet) {
         for (Instance img : trainSet.getImages()) {

@@ -1,32 +1,29 @@
 package v2;
 
 import static v2.Util.checkPositive;
-import static v2.Util.checkValueInRange;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A plate layer that performs max pooling on a specified window. There is no overlap between different placements of
- * the window.
- *
+ * A plate layer that performs max pooling on a specified window.
+ * There is no overlap between different placements of the window.
  */
 public class PoolingLayer implements PlateLayer {
     private final int windowHeight;
     private final int windowWidth;
-    // quite similar to a plate, except its booleans so more memory efficient
-    private List<boolean[][]> maximumOfWindow;
     private int numOutputs;
     private int outputHeight;
     private int outputWidth;
+    private List<Plate> errors;
+    private List<Plate> output;
+    private double[][][] upscaledValues;
+    private boolean[][][] maximumOfWindow;
     private final double dropoutRate;
     private final boolean[][] activeNodes;
-    
+
     private PoolingLayer(int numWindows, int windowHeight, int windowWidth, double dropoutRate) {
-    	maximumOfWindow = new ArrayList<>(numWindows);
-    	for (int i = 0; i < numWindows; i++) {
-    		maximumOfWindow.add(null);
-    	}
+    	maximumOfWindow = new boolean[numWindows][][];
         this.windowHeight = windowHeight;
         this.windowWidth = windowWidth;
         
@@ -38,7 +35,7 @@ public class PoolingLayer implements PlateLayer {
 
     @Override
     public int getSize() {
-    	return maximumOfWindow.size();
+    	return maximumOfWindow.length;
     }
     
     @Override
@@ -95,45 +92,66 @@ public class PoolingLayer implements PlateLayer {
 
     @Override
     public List<Plate> computeOutput(List<Plate> input, boolean currentlyTraining) {
-        if (maximumOfWindow.get(0) == null) {
-            maximumOfWindow = new ArrayList<>();
-            for (Plate anInput : input) {
-                maximumOfWindow.add(new boolean[anInput.getHeight()][anInput.getWidth()]);
-            }
+    	if (currentlyTraining) {
+    		determineDroppedOutNodes();
+    	} else {
+    		resetDroppedOutNodes();
+    	}
+
+		if (maximumOfWindow[0] == null) {
+            maximumOfWindow = new boolean[input.size()][input.get(0).getHeight()][input.get(0).getWidth()];
         }
-        
-        if (currentlyTraining) {
-        	determineDroppedOutNodes();
-        } else {
-        	resetDroppedOutNodes();
+        int resultHeight = input.get(0).getHeight() / windowHeight;
+        int resultWidth = input.get(0).getWidth() / windowWidth;
+        resultHeight += input.get(0).getHeight() % windowHeight == 0 ? 0 : 1;
+        resultWidth += input.get(0).getWidth() % windowWidth == 0 ? 0 : 1;
+        if (output == null) {
+        	output = new ArrayList<>(input.size());
+        	for (int i = 0; i < input.size(); i++) {
+        		output.add(new Plate(new double[resultHeight][resultWidth]));
+        	}
         }
 
-        List<Plate> output = new ArrayList<>(input.size());
         for (int i = 0; i < input.size(); i++) {
-            output.add(maxPool(input.get(i), maximumOfWindow.get(i), windowHeight, windowWidth));
+        	double[][] result = output.get(i).getValues();
+        	  for (int j = 0; j < result.length; j++) {
+                  for (int k = 0; k < result[j].length; k++) {
+                      int windowStartI = Math.min(j * windowHeight, input.get(i).getHeight() - 1);
+                      int windowStartJ = Math.min(k * windowWidth, input.get(i).getWidth() - 1);
+                      result[j][k] =
+                              maxValInWindow(
+                                      input.get(i),
+                                      maximumOfWindow[i],
+                                      windowStartI,
+                                      windowStartJ,
+                                      windowHeight,
+                                      windowWidth);
+                  }
+              }
         }
         return output;
     }
 
     @Override
     public List<Plate> propagateError(List<Plate> gradients, double learningRate) {
-        List<Plate> output = new ArrayList<>(gradients.size());
+    	if (errors == null) {
+    		errors = new ArrayList<>(gradients.size());
+    		upscaledValues = new double[gradients.size()][maximumOfWindow[0].length][maximumOfWindow[0][0].length];
+    		for (int i = 0; i < gradients.size(); i++) {
+    			errors.add(new Plate(upscaledValues[i]));
+    		}
+    	}
         for (int i = 0; i < gradients.size(); i++) {
             Plate errorPlate = gradients.get(i);
-            double[][] upscaledValues = new double[maximumOfWindow.get(0).length][maximumOfWindow.get(0)[0].length];
-            boolean[][] maximumOfPlate = maximumOfWindow.get(i);
-            for (int j = 0; j < maximumOfPlate.length; j++) {
-                for (int k = 0; k < maximumOfPlate[j].length; k++) {
-                    // gradient is either copied from upper layer or zero - Ran Manor's answer at
-                    // https://www.quora.com/In-neural-networks-how-does-backpropagation-get-carried-through-maxpool-layers
-                    upscaledValues[j][k] = maximumOfPlate[j][k]
+            for (int j = 0; j < maximumOfWindow[i].length; j++) {
+                for (int k = 0; k < maximumOfWindow[i][j].length; k++) {
+                    upscaledValues[i][j][k] = maximumOfWindow[i][j][k]
                             ? errorPlate.valueAt(j / windowHeight, k / windowWidth)
                             : 0;
                 }
             }
-            output.add(new Plate(upscaledValues));
         }
-        return output;
+        return errors;
     }
 
     @Override
@@ -142,36 +160,9 @@ public class PoolingLayer implements PlateLayer {
     @Override
     public void restoreState() { /* Do nothing! */ }
 
-    /** Returns the max-pooled plate. No overlap between each pool. */
-    private Plate maxPool(Plate plate, boolean[][] maximumOfPlate, int windowHeight, int windowWidth) {
-        checkValueInRange(windowHeight, 0, plate.getHeight(), "Max pool window height");
-        checkValueInRange(windowWidth, 0, plate.getWidth(), "Max pool window width");
-        int resultHeight = plate.getHeight() / windowHeight;
-        int resultWidth = plate.getWidth() / windowWidth;
-        resultHeight += plate.getHeight() % windowHeight == 0 ? 0 : 1;
-        resultWidth += plate.getWidth() % windowWidth == 0 ? 0 : 1;
-
-        double[][] result = new double[resultHeight][resultWidth];
-        for (int i = 0; i < result.length; i++) {
-            for (int j = 0; j < result[i].length; j++) {
-                int windowStartI = Math.min(i * windowHeight, plate.getHeight() - 1);
-                int windowStartJ = Math.min(j * windowWidth, plate.getWidth() - 1);
-                result[i][j] =
-                        maxValInWindow(
-                                plate,
-                                maximumOfPlate,
-                                windowStartI,
-                                windowStartJ,
-                                windowHeight,
-                                windowWidth);
-            }
-        }
-        return new Plate(result);
-    }
-
     private double maxValInWindow(
             Plate plate, boolean[][] maximumOfPlate, int windowStartI, int windowStartJ, int windowHeight, int windowWidth) {
-        double max = Double.MIN_VALUE;
+        double max = -Double.MAX_VALUE; 
         int windowEndI = Math.min(windowStartI + windowHeight - 1, plate.getHeight() - 1);
         int windowEndJ = Math.min(windowStartJ + windowWidth - 1, plate.getWidth() - 1);
         int maxI = -1;
@@ -222,8 +213,8 @@ public class PoolingLayer implements PlateLayer {
     @Override
     public String toString() {
         return  "\n------\tPooling Layer\t------\n\n" +
-                String.format("Window height: %d\n", windowHeight) +
-                String.format("Window width: %d\n", windowWidth) +
+                String.format("Window size: %dx%d\n", windowHeight, windowWidth) +
+                String.format("Output size: %dx%d\n", outputHeight, outputWidth) +
                 String.format("Dropout rate: %.2f\n", dropoutRate) +
                 "\n\t------------\t\n";
     }

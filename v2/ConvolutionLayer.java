@@ -5,7 +5,6 @@ import static v2.Util.checkNotNull;
 import static v2.Util.checkPositive;
 import static v2.Util.doubleArrayCopy2D;
 import static v2.Util.tensorAdd;
-import static v2.Util.scalarMultiply;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +25,9 @@ public class ConvolutionLayer implements PlateLayer {
     private int outputWidth;
     private final double dropoutRate;
     private final List<boolean[][]> activeNodes;
+    private double[][] update;
+    private List<Plate> deltaOutput;
+    private List<Plate> output;
 
     private ConvolutionLayer(List<Plate> convolutions, int numChannels, double dropoutRate) {
         this.convolutions = convolutions;
@@ -92,7 +94,7 @@ public class ConvolutionLayer implements PlateLayer {
     		throw new RuntimeException("Cannot call calculateOutputWidth without arguments before calling it with arguments.");
     	}
     }
-
+    
     @Override
     public List<Plate> computeOutput(List<Plate> input, boolean currentlyTraining) {
         checkNotNull(input, "Convolution layer input");
@@ -105,46 +107,54 @@ public class ConvolutionLayer implements PlateLayer {
         } else {
         	resetDroppedOutNodes();
         }
-        
-        // Convolve each input with each mask.
-        List<Plate> output = new ArrayList<>();
-        Plate[] masks = new Plate[numChannels];
+
         int maskHeight = convolutions.get(0).getHeight();
         int maskWidth = convolutions.get(0).getWidth();
+        if (output == null) {
+        	output = new ArrayList<>();
+        	for (int i = 0; i < convolutions.size() / numChannels; i++) {
+        		output.add(new Plate(new double[input.get(0).getHeight() - maskHeight + 1][input.get(0).getWidth() - maskWidth + 1]));
+        	}
+        } else {
+        	for (int i = 0; i < output.size(); i++) {
+        		Util.clear(output.get(i).getValues());
+        	}
+        }
+
+        // Convolve each input with each mask.
         for (int i = 0; i < convolutions.size(); i += numChannels) {
-            double[][] values = new double[input.get(0).getHeight() - maskHeight + 1][input.get(0).getWidth() - maskWidth + 1];
             // convolve each input image, sum the output, add the new plate
             for (int j = 0; j < numChannels; j++) {
-                if (currentlyTraining) {
-                	// Downscale weights according to proportion of dropped out node.
-                	masks[j] = new Plate(scalarMultiply(
-                			1 - dropoutRate,
-                			convolutions.get(i + j).getValues(),
-                			false));
-                } else {
-                	masks[j] = convolutions.get(i + j);
-                }
-                
-                tensorAdd(values, input.get(j).convolve(masks[j], activeNodes.get(i + j)).getValues(), true);
+            	Plate mask = convolutions.get(i + j);
+            	if (currentlyTraining) {
+            		mask = new Plate(Util.scalarMultiply(1 - dropoutRate, mask.getValues(), false));
+            	}
+                Util.tensorAdd(
+                		output.get(i / numChannels).getValues(), 
+                		input.get(j).convolve(mask, activeNodes.get(i + j)).getValues(),
+                		true);
             }
-            output.add((new Plate(values).applyActivation(ActivationFunction.RELU)));
+            output.get(i / numChannels).applyActivation(ActivationFunction.RELU);
         }
         previousOutput = deepCopyPlates(output);
         return output;
     }
+
 
     @Override
     public List<Plate> propagateError(List<Plate> errors, double learningRate) {
         if (errors.size() != previousOutput.size() || previousInput.isEmpty()) {
             throw new IllegalArgumentException("Bad propagation state.");
         }
-
+        
+        if (update == null) {
+        	update = new double[convolutions.get(0).getHeight()][convolutions.get(0).getWidth()];
+        }
         // Update the convolution values
         for (int i = 0; i < previousInput.size(); i++) {
             // Loop over the plate
             for (int j = 0; j <= errors.get(i).getHeight() - convolutions.get(i).getHeight(); j++) {
                 for (int k = 0; k <= errors.get(i).getWidth() - convolutions.get(i).getWidth(); k++) {
-                    double[][] update = new double[convolutions.get(i).getHeight()][convolutions.get(i).getWidth()];
                     for (int l = 0; l < convolutions.get(i).getHeight(); l++) {
                         for (int m = 0; l < convolutions.get(i).getHeight(); l++) {
                             if (!activeNodes.get(i)[l][m]) {
@@ -157,49 +167,47 @@ public class ConvolutionLayer implements PlateLayer {
                                     * learningRate;
                         }
                     }
-                    convolutions.get(i).setVals(tensorAdd(convolutions.get(i).getValues(), update, false));
+                    convolutions.get(i).setValues(tensorAdd(convolutions.get(i).getValues(), update, false));
                 }
             }
         }
 
         // Stores the delta values for all the plates in current layer
-        List<Plate> deltaOutput = new ArrayList<>(errors.size());
-        // Total error
-        double[][][] error = new double[errors.size()][][];
-        double[][][] delta = new double[error.length][][];
+        if (deltaOutput == null) {
+        	deltaOutput = new ArrayList<>(errors.size());
+        	for (int i = 0; i < errors.size(); i++) {
+        		deltaOutput.add(new Plate(new double[previousInput.get(0).getHeight()][previousInput.get(0).getWidth()]));
+        	}
+        } else {
+        	for (int i = 0; i < deltaOutput.size(); i++) {
+        		Util.clear(deltaOutput.get(i).getValues());
+        	}
+        }
 
         if (previousInput.size() == errors.size()) {
             for (int i = 0; i < errors.size(); i++) {
-                error[i] = new double[previousInput.get(i).getHeight()][previousInput.get(i).getWidth()];
-
-                // Loop over the entire plate and update weights (convolution values) using the equation
-                // given in Russel and Norvig (check Lab 3 slides)
-                delta[i] = new double[previousInput.get(i).getHeight()][previousInput.get(i).getWidth()];
-
-                for (int row = 0; row <= delta[i].length - convolutions.get(i).getHeight(); row++) {
-                    for (int col = 0; col <= delta[i][row].length - convolutions.get(i).getWidth(); col++) {
+            	double[][] delta = deltaOutput.get(i).getValues();
+            	Plate rotatedConvolution = convolutions.get(i).rot180();
+                for (int row = 0; row <= delta.length - convolutions.get(i).getHeight(); row++) {
+                    for (int col = 0; col <= delta[row].length - convolutions.get(i).getWidth(); col++) {
                         for (int kernelRow = 0; kernelRow < convolutions.get(i).getHeight(); kernelRow++) {
                             for (int kernelCol = 0; kernelCol < convolutions.get(i).getWidth(); kernelCol++) {
                             	if (!activeNodes.get(i)[convolutions.get(i).getHeight() - kernelRow - 1]
                             						   [convolutions.get(i).getWidth() - kernelCol - 1]) {
                             		continue;
                             	}
-                            	
-                            	delta[i][row + kernelRow][col + kernelCol] +=
-                            			errors.get(i).valueAt(row, col) 
-                            					* convolutions.get(i).rot180().valueAt(kernelRow, kernelCol);
+                                delta[row + kernelRow][col + kernelCol] += errors.get(i).valueAt(row, col)
+                                        * rotatedConvolution.valueAt(kernelRow, kernelCol);
                             }
                         }
                     }
                 }
 
-                for (int row = 0; row < delta[i].length; row++) {
-                    for (int col = 0; col < delta[i][row].length; col++) {
-                        delta[i][row][col] *= ActivationFunction.RELU.applyDerivative(previousInput.get(i).valueAt(row, col));
+                for (int row = 0; row < delta.length; row++) {
+                    for (int col = 0; col < delta[row].length; col++) {
+                        delta[row][col] *= ActivationFunction.RELU.applyDerivative(previousInput.get(i).valueAt(row, col));
                     }
                 }
-
-                deltaOutput.add(new Plate(delta[i]));
             }
             return deltaOutput;
         } else {
@@ -222,11 +230,14 @@ public class ConvolutionLayer implements PlateLayer {
     private void determineDroppedOutNodes() {
     	resetDroppedOutNodes();
     	for (boolean[][] activeMatrix : activeNodes) {
+    		int dropoutCount = 0;
+        	int maxDropouts = activeMatrix.length * activeMatrix[0].length / 2;
     		for (int i = 0; i < activeMatrix.length; i++) {
     			for (int j = 0; j < activeMatrix[i].length; j++) {
-    				if (dropoutRate > Util.RNG.nextDouble()) {
+    				if (dropoutRate > Util.RNG.nextDouble() && dropoutCount < maxDropouts) {
     					// The node "drops out."
     					activeMatrix[i][j] = false;
+    					dropoutCount++;
     				}
     			}
     		}
@@ -262,6 +273,11 @@ public class ConvolutionLayer implements PlateLayer {
                         numChannels,
                         convolutions.get(0).getHeight(),
                         convolutions.get(0).getWidth()) +
+                String.format(
+                		"Output size     : %dx%dx%d\n",
+                		numChannels,
+                		outputHeight,
+                		outputWidth) +
                 String.format("Number of convolutions: %d\n", convolutions.size()) +
                 "Activation Function: RELU\n" +
                 String.format("Dropout rate: %.2f\n", dropoutRate) +

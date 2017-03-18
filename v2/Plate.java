@@ -7,6 +7,7 @@ import static v2.Util.checkValueInRange;
 /** Represents something image-like. */
 public class Plate {
 	private double[][] values;
+	private double[][] result;
 	
 	/**
 	 * Constructs a new plate for the given values. 
@@ -20,12 +21,16 @@ public class Plate {
 		checkPositive(values[0].length, "Plate width", false);
 		this.values = values;
 	}
+	
+	Plate() {
+		
+	}
 
 	/** Returns the height of each channel. */
 	int getHeight() { return values.length; }
 	
 	/** Returns the width of each channel. */
-	public int getWidth() { return values[0].length; }
+	int getWidth() { return values[0].length; }
 	
 	/** Returns the total number of values in the plate. */
 	int getTotalNumValues() { return getHeight() * getWidth(); }
@@ -34,7 +39,7 @@ public class Plate {
 		return values;
 	}
 	
-	void setVals(double[][] newVals) {
+	void setValues(double[][] newVals) {
 		this.values = newVals;
 	}
 	
@@ -54,7 +59,9 @@ public class Plate {
 		checkValidMask(mask);
 		int maskHeight = mask.getHeight();
 		int maskWidth = mask.getWidth();
-		double[][] result = new double[getHeight() - maskHeight + 1][getWidth() - maskWidth + 1];
+		if (result == null) {
+			result = new double[getHeight() - maskHeight + 1][getWidth() - maskWidth + 1];
+		}
 		for (int i = 0; i < result.length; i++) {
 			for (int j = 0; j < result[i].length; j++) {
 				result[i][j] = convolvePixelIJ(mask, activeMatrix, i + maskHeight / 2, j + maskWidth / 2);
@@ -98,7 +105,7 @@ public class Plate {
 	}
 	
 	/** Applies the activation function to all values in the plate. */
-	Plate applyActivation(ActivationFunction func) {
+	void applyActivation(ActivationFunction func) {
 		checkNotNull(func, "Activation function");
 		double[][] output = new double[getHeight()][getWidth()];
 		for (int i = 0; i < getHeight(); i++) {
@@ -106,7 +113,7 @@ public class Plate {
 				output[i][j] = func.apply(values[i][j]);
 			}
 		}
-		return new Plate(output);
+		values = output;
 	}
 	
 	/** Pack this plate into a 1D array, channel by channel, row by row. */
