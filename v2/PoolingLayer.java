@@ -158,7 +158,7 @@ public class PoolingLayer implements PlateLayer {
 
     private double maxValInWindow(
             Plate plate, boolean[][] maximumOfPlate, int windowStartI, int windowStartJ, int windowHeight, int windowWidth) {
-        double max = Double.MIN_VALUE;
+        double max = -Double.MAX_VALUE; 
         int windowEndI = Math.min(windowStartI + windowHeight - 1, plate.getHeight() - 1);
         int windowEndJ = Math.min(windowStartJ + windowWidth - 1, plate.getWidth() - 1);
         int maxI = -1;
