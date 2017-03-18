@@ -79,10 +79,14 @@ public class Lab3 {
 
 	public static Dataset trainSet, tuneSet, testSet, trainSetExtras;
 
-	// 6.0 is the 'default.'
-	protected static final double shiftProbNumerator = 6.0;
-	// This 48 is also embedded elsewhere!
-	protected static final double probOfKeepingShiftedTrainsetImage = (shiftProbNumerator / 48.0);
+	protected static final double shiftProbNumerator = 6.0; // 6.0 is the
+															// 'default.'
+	protected static final double probOfKeepingShiftedTrainsetImage = (shiftProbNumerator / 48.0); // This
+																									// 48
+																									// is
+																									// also
+																									// embedded
+																									// elsewhere!
 	protected static final boolean perturbPerturbedImages = false;
 	protected final static boolean createExtraTrainingExamples = true;
 
@@ -141,6 +145,11 @@ public class Lab3 {
 		System.out.println("The  tuneset contains " + comma(testset.getSize()) + " examples.  Took "
 				+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + ".");
 
+		// Now train a Deep ANN. You might wish to first use your Lab 2 code
+		// here and see how one layer of HUs does. Maybe
+		// even try your perceptron code. We are providing code that converts
+		// images to feature vectors. Feel free to
+		// discard or modify.
 		start = System.currentTimeMillis();
 
 		if (createExtraTrainingExamples) {
@@ -153,7 +162,7 @@ public class Lab3 {
 				createMoreImagesFromThisImage(origTrainImage, 1.00);
 			}
 			if (perturbPerturbedImages) {
-				Dataset copyOfExtras = new Dataset();
+				Dataset copyOfExtras = new Dataset(); 
 				for (Instance perturbedTrainImage : trainsetExtras.getImages()) {
 					copyOfExtras.add(perturbedTrainImage);
 				}
@@ -161,13 +170,27 @@ public class Lab3 {
 					createMoreImagesFromThisImage(perturbedTrainImage,
 							((perturbedTrainImage.getProvenance() == Instance.HowCreated.FlippedLeftToRight
 									|| perturbedTrainImage.getProvenance() == Instance.HowCreated.FlippedTopToBottom)
-											? 3.33 : 0.66)
-									/ (0.5 + 6.0 + shiftProbNumerator));
-					// Increase the odds of perturbing flipped images a bit,
-					// since fewer of those. Aim to create about one more
-					// perturbed image per originally perturbed image.
-					// The 0.5 is for the chance of flip-flopping. The 6.0 is
-					// from rotations.
+											? 3.33 // Increase the odds of
+													// perturbing flipped images
+													// a bit, since fewer of
+													// those.
+											: 0.66) // Aim to create about one
+													// more perturbed image per
+													// originally perturbed
+													// image.
+									/ (0.5 + 6.0 + shiftProbNumerator)); // The
+																			// 0.5
+																			// is
+																			// for
+																			// the
+																			// chance
+																			// of
+																			// flip-flopping.
+																			// The
+																			// 6.0
+																			// is
+																			// from
+																			// rotations.
 				}
 			}
 
@@ -199,6 +222,8 @@ public class Lab3 {
 					countOfCreatedTrainingImages[convertCategoryStringToEnum(createdTrainImage.getLabel()).ordinal()]++;
 					count_trainsetExtrasKept++;
 					trainset.add(createdTrainImage);
+					System.out.println("The trainset NOW contains " + comma(trainset.getSize()) + " examples. Took "
+							+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + ".");
 				}
 			}
 			for (Category cat : Category.values()) {
@@ -219,22 +244,30 @@ public class Lab3 {
 	}
 
 	private static void createMoreImagesFromThisImage(Instance trainImage, double probOfKeeping) {
-		if (!"airplanes".equals(trainImage.getLabel()) &&
-		// Airplanes all 'face' right and up, so don't flip left-to-right or
-		// top-to-bottom.
-				!"grand_piano".equals(trainImage.getLabel())) {
-			// Ditto for pianos.
+		if (!"airplanes".equals(trainImage.getLabel()) && // Airplanes all
+															// 'face' right and
+															// up, so don't flip
+															// left-to-right or
+															// top-to-bottom.
+				!"grand_piano".equals(trainImage.getLabel())) { // Ditto for
+																// pianos.
 
 			if (trainImage.getProvenance() != Instance.HowCreated.FlippedLeftToRight && random() <= probOfKeeping)
 				trainSetExtras.add(trainImage.flipImageLeftToRight());
 
-			if (!"butterfly".equals(trainImage.getLabel()) &&
-			// Butterflies all have the heads at the top, so don't flip
-			// to-to-bottom.
-					!"flower".equals(trainImage.getLabel()) &&
-					// Ditto for flowers.
-					!"starfish".equals(trainImage.getLabel())) {
-				// Star fish are standardized to 'point up.
+			if (!"butterfly".equals(trainImage.getLabel()) && // Butterflies all
+																// have the
+																// heads at the
+																// top, so don't
+																// flip
+																// to-to-bottom.
+					!"flower".equals(trainImage.getLabel()) && // Ditto for
+																// flowers.
+					!"starfish".equals(trainImage.getLabel())) { // Star fish
+																	// are
+																	// standardized
+																	// to 'point
+																	// up.
 				if (trainImage.getProvenance() != Instance.HowCreated.FlippedTopToBottom && random() <= probOfKeeping)
 					trainSetExtras.add(trainImage.flipImageTopToBottom());
 			}
@@ -253,11 +286,15 @@ public class Lab3 {
 				trainSetExtras.add(trainImage.rotateImageThisManyDegrees(4));
 			if (random() <= probOfKeeping)
 				trainSetExtras.add(trainImage.rotateImageThisManyDegrees(-4));
-			if (!"butterfly".equals(trainImage.getLabel()) &&
-			// Butterflies all have the heads at the top, so don't rotate too
-			// much.
-					!"flower".equals(trainImage.getLabel()) &&
-					// Ditto for flowers and starfish.
+			if (!"butterfly".equals(trainImage.getLabel()) && // Butterflies all
+																// have the
+																// heads at the
+																// top, so don't
+																// rotate too
+																// much.
+					!"flower".equals(trainImage.getLabel()) && // Ditto for
+																// flowers and
+																// starfish.
 					!"starfish".equals(trainImage.getLabel())) {
 				if (random() <= probOfKeeping)
 					trainSetExtras.add(trainImage.rotateImageThisManyDegrees(5));
@@ -296,13 +333,14 @@ public class Lab3 {
 				// load in all images
 				img = ImageIO.read(file);
 				// every image's name is in such format: label_image_XXXX(4
-				// digits) though this code could handle more than 4 digits.
+				// digits) though this code could handle more than
+				// 4 digits.
 				String name = file.getName();
 				int locationOfUnderscoreImage = name.indexOf("_image");
 
 				// Resize the image if requested. Any resizing allowed, but
-				// should really be one of 8x8, 16x16, 32x32, or 64x64 (original
-				// data is 128x128).
+				// should really be one of 8x8, 16x16, 32x32, or
+				// 64x64 (original data is 128x128).
 				if (imageSize != 128) {
 					scaledBI = new BufferedImage(imageSize, imageSize, BufferedImage.TYPE_INT_RGB);
 					Graphics2D g = scaledBI.createGraphics();
@@ -313,6 +351,7 @@ public class Lab3 {
 				Instance instance = new Instance(scaledBI == null ? img : scaledBI, name,
 						name.substring(0, locationOfUnderscoreImage));
 
+				dataset.add(instance);
 			} catch (IOException e) {
 				System.err.println("Error: cannot load in the image file");
 				System.exit(1);
@@ -598,6 +637,22 @@ public class Lab3 {
 		return randomInInterval(0, upper);
 	}
 
+	/////////////////////////////////////////////////////////////////////////////////////////////// Write
+	/////////////////////////////////////////////////////////////////////////////////////////////// your
+	/////////////////////////////////////////////////////////////////////////////////////////////// own
+	/////////////////////////////////////////////////////////////////////////////////////////////// code
+	/////////////////////////////////////////////////////////////////////////////////////////////// below
+	/////////////////////////////////////////////////////////////////////////////////////////////// here.
+	/////////////////////////////////////////////////////////////////////////////////////////////// Feel
+	/////////////////////////////////////////////////////////////////////////////////////////////// free
+	/////////////////////////////////////////////////////////////////////////////////////////////// to
+	/////////////////////////////////////////////////////////////////////////////////////////////// use
+	/////////////////////////////////////////////////////////////////////////////////////////////// or
+	/////////////////////////////////////////////////////////////////////////////////////////////// discard
+	/////////////////////////////////////////////////////////////////////////////////////////////// what
+	/////////////////////////////////////////////////////////////////////////////////////////////// is
+	/////////////////////////////////////////////////////////////////////////////////////////////// provided.
+
 	private static int trainPerceptrons(Vector<Vector<Double>> trainFeatureVectors,
 			Vector<Vector<Double>> tuneFeatureVectors, Vector<Vector<Double>> testFeatureVectors) {
 		Vector<Vector<Double>> perceptrons = new Vector<Vector<Double>>(Category.values().length); // One
@@ -703,9 +758,14 @@ public class Lab3 {
 				.appendConvolutionLayer(
 						ConvolutionLayer.newBuilder().setConvolutionSize(1, 5, 5).setNumConvolutions(20).build())
 				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).setNumWindows(20).build())
-				.appendConvolutionLayer(
-						ConvolutionLayer.newBuilder().setConvolutionSize(1, 5, 5).setNumConvolutions(20).build())
-				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).setNumWindows(20).build())
+				 .appendConvolutionLayer(ConvolutionLayer.newBuilder()
+				 .setConvolutionSize(1, 5, 5)
+				 .setNumConvolutions(20)
+				 .build())
+				 .appendPoolingLayer(PoolingLayer.newBuilder()
+				 .setWindowSize(2, 2)
+				 .setNumWindows(20)
+				 .build())
 				.setFullyConnectedDepth(1) // i.e., one hidden layer.
 				.setFullyConnectedWidth(300).setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
 				.setClasses(categoryNames).setMinEpochs(minEpochs).setMaxEpochs(maxEpochs).setLearningRate(eta)
