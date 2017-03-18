@@ -27,7 +27,6 @@ import java.util.Vector;
 import javax.imageio.ImageIO;
 
 public class Lab3 {
-
 	// Images are imageSize x imageSize. The provided data is 128x128, but this
 	// can be resized by setting this value (or
 	// passing in an argument). You might want to resize to 8x8, 16x16, 32x32,
@@ -74,8 +73,8 @@ public class Lab3 {
 	private static double eta = 0.01, fractionOfTrainingToUse = 1.00, dropoutRate = 0;
 
 	// Feel free to set to a different value.
-	private static int minEpochs = 500;
-	private static int maxEpochs = 2000;
+	private static int minEpochs = 1000;
+	private static int maxEpochs = 5000;
 
 	public static Dataset trainSet, tuneSet, testSet, trainSetExtras;
 

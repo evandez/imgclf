@@ -52,7 +52,7 @@ public class ConvolutionalNeuralNetwork {
         	trainSet = shuffle(trainSet);
             trainSingleEpoch(trainSet);
 
-            currAccuracy = test(tuneSet, false, (epoch % 10 == 0));
+            currAccuracy = test(tuneSet, false, (epoch % 5 == 0));
 
             if (verbose)
                 System.out.printf(
