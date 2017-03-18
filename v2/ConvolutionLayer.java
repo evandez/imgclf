@@ -201,6 +201,11 @@ public class ConvolutionLayer implements PlateLayer {
                         numChannels,
                         convolutions.get(0).getHeight(),
                         convolutions.get(0).getWidth()) +
+                String.format(
+                		"Output size     : %dx%dx%d\n",
+                		numChannels,
+                		outputHeight,
+                		outputWidth) +
                 String.format("Number of convolutions: %d\n", convolutions.size()) +
                 "Activation Function: RELU\n" +
                 "\n\t------------\t\n";

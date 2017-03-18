@@ -180,8 +180,8 @@ public class PoolingLayer implements PlateLayer {
     @Override
     public String toString() {
         return  "\n------\tPooling Layer\t------\n\n" +
-                String.format("Window height: %d\n", windowHeight) +
-                String.format("Window width: %d\n", windowWidth) +
+                String.format("Window size: %dx%d\n", windowHeight, windowWidth) +
+                String.format("Output size: %dx%d\n", outputHeight, outputWidth) +
                 "\n\t------------\t\n";
     }
 

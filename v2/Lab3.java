@@ -28,10 +28,13 @@ import javax.imageio.ImageIO;
 
 public class Lab3 {
 
-	// Images are imageSize x imageSize. The provided data is 128x128, but this can be resized by setting this value (or
-	// passing in an argument). You might want to resize to 8x8, 16x16, 32x32, or 64x64; this can reduce your network
-	// size and speed up debugging runs. ALL IMAGES IN A TRAINING RUN SHOULD BE THE *SAME* SIZE.
-	private static int imageSize = 32;
+	// Images are imageSize x imageSize. The provided data is 128x128, but this
+	// can be resized by setting this value (or
+	// passing in an argument). You might want to resize to 8x8, 16x16, 32x32,
+	// or 64x64; this can reduce your network
+	// size and speed up debugging runs. ALL IMAGES IN A TRAINING RUN SHOULD BE
+	// THE *SAME* SIZE.
+	private static int imageSize = 64;
 
 	// We'll hardwire these in, but more robust code would not do so.
 	private static enum Category {
@@ -47,7 +50,7 @@ public class Lab3 {
 			categoryNames.add(cat.toString());
 		}
 	}
-	
+
 	// If true, FOUR units are used per pixel: red, green, blue, and grey.
 	// If false, only ONE (the grey-scale value).
 	private static final Boolean useRGB = true;
@@ -55,27 +58,34 @@ public class Lab3 {
 	// If using RGB, use red+blue+green+grey. Otherwise just use the grey value.
 	private static int unitsPerPixel = (useRGB ? 4 : 1);
 
-	// Should be one of { "perceptrons", "oneLayer", "deep" }; You might want to use this if you are trying approaches
+	// Should be one of { "perceptrons", "oneLayer", "deep" }; You might want to
+	// use this if you are trying approaches
 	// other than a Deep ANN.
 	private static String modelToUse = "deep";
 
-	// The provided code uses a 1D vector of input features. You might want to create a 2D version for your Depp ANN
-	// code. Or use the get2DfeatureValue() 'accessor function' that maps 2D coordinates into the 1D vector. The last
+	// The provided code uses a 1D vector of input features. You might want to
+	// create a 2D version for your Depp ANN
+	// code. Or use the get2DfeatureValue() 'accessor function' that maps 2D
+	// coordinates into the 1D vector. The last
 	// element in this vector holds the 'teacher-provided' label of the example.
 	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
-	private static double eta = 0.01, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
+	private static double eta = 0.001, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
-	private static int minEpochs = 50;
+	private static int minEpochs = 500;
 	private static int maxEpochs = 2000;
-	
-	private static int MAX_INSTANCES = 30;
-	private static boolean FAST = false;
 
-	public static Dataset trainSet, tuneSet, testSet;
-	
+	public static Dataset trainSet, tuneSet, testSet, trainSetExtras;
+
+	// 6.0 is the 'default.'
+	protected static final double shiftProbNumerator = 6.0;
+	// This 48 is also embedded elsewhere!
+	protected static final double probOfKeepingShiftedTrainsetImage = (shiftProbNumerator / 48.0);
+	protected static final boolean perturbPerturbedImages = false;
+	protected final static boolean createExtraTrainingExamples = true;
+
 	public static void main(String[] args) {
 		String trainDirectory = "images/trainset/";
 		String tuneDirectory = "images/tuneset/";
@@ -109,9 +119,11 @@ public class Lab3 {
 		Dataset trainset = new Dataset();
 		Dataset tuneset = new Dataset();
 		Dataset testset = new Dataset();
+		Dataset trainsetExtras = new Dataset();
 		trainSet = trainset;
 		tuneSet = tuneset;
 		testSet = testset;
+		trainSetExtras = trainsetExtras;
 
 		// Load in images into datasets.
 		long start = System.currentTimeMillis();
@@ -129,14 +141,147 @@ public class Lab3 {
 		System.out.println("The  tuneset contains " + comma(testset.getSize()) + " examples.  Took "
 				+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + ".");
 
-		// Now train a Deep ANN. You might wish to first use your Lab 2 code here and see how one layer of HUs does. Maybe
-		// even try your perceptron code. We are providing code that converts images to feature vectors. Feel free to
-		// discard or modify.
 		start = System.currentTimeMillis();
 
-		trainANN(trainset, tuneset, testset);
-		System.out.println("\nTook " + convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + " to train.");
+		if (createExtraTrainingExamples) {
 
+			start = System.currentTimeMillis();
+
+			// Flipping watches will mess up the digits on the watch faces, but
+			// that probably is ok.
+			for (Instance origTrainImage : trainset.getImages()) {
+				createMoreImagesFromThisImage(origTrainImage, 1.00);
+			}
+			if (perturbPerturbedImages) {
+				Dataset copyOfExtras = new Dataset();
+				for (Instance perturbedTrainImage : trainsetExtras.getImages()) {
+					copyOfExtras.add(perturbedTrainImage);
+				}
+				for (Instance perturbedTrainImage : copyOfExtras.getImages()) {
+					createMoreImagesFromThisImage(perturbedTrainImage,
+							((perturbedTrainImage.getProvenance() == Instance.HowCreated.FlippedLeftToRight
+									|| perturbedTrainImage.getProvenance() == Instance.HowCreated.FlippedTopToBottom)
+											? 3.33 : 0.66)
+									/ (0.5 + 6.0 + shiftProbNumerator));
+					// Increase the odds of perturbing flipped images a bit,
+					// since fewer of those. Aim to create about one more
+					// perturbed image per originally perturbed image.
+					// The 0.5 is for the chance of flip-flopping. The 6.0 is
+					// from rotations.
+				}
+			}
+
+			int[] countOfCreatedTrainingImages = new int[Category.values().length];
+			int count_trainsetExtrasKept = 0;
+			for (Instance createdTrainImage : trainsetExtras.getImages()) {
+				// Keep more of the less common categories?
+				double probOfKeeping = 1.0;
+
+				// Trainset counts: airplanes=127, butterfly=55, flower=114,
+				// piano=61, starfish=51, watch=146
+				if ("airplanes".equals(createdTrainImage.getLabel()))
+					probOfKeeping = 0.66; // No flips, so fewer created.
+				else if ("butterfly".equals(createdTrainImage.getLabel()))
+					probOfKeeping = 1.00; // No top-bottom flips, so fewer
+											// created.
+				else if ("flower".equals(createdTrainImage.getLabel()))
+					probOfKeeping = 0.66; // No top-bottom flips, so fewer
+											// created.
+				else if ("grand_piano".equals(createdTrainImage.getLabel()))
+					probOfKeeping = 1.00; // No flips, so fewer created.
+				else if ("starfish".equals(createdTrainImage.getLabel()))
+					probOfKeeping = 1.00; // No top-bottom flips, so fewer
+											// created.
+				else if ("watch".equals(createdTrainImage.getLabel()))
+					probOfKeeping = 0.50; // Already have a lot of these.
+
+				if (random() <= probOfKeeping) {
+					countOfCreatedTrainingImages[convertCategoryStringToEnum(createdTrainImage.getLabel()).ordinal()]++;
+					count_trainsetExtrasKept++;
+					trainset.add(createdTrainImage);
+				}
+			}
+			for (Category cat : Category.values()) {
+				System.out.println(" Kept " + padLeft(comma(countOfCreatedTrainingImages[cat.ordinal()]), 5)
+						+ " 'tweaked' images of " + cat + ".");
+			}
+			System.out.println("Created a total of " + comma(trainsetExtras.getSize())
+					+ " new training examples and kept " + comma(count_trainsetExtrasKept) + ".  Took "
+					+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + ".");
+			System.out.println("The trainset NOW contains " + comma(trainset.getSize()) + " examples.  Took "
+					+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + ".");
+		}
+
+		trainANN(trainset, tuneset, testset);
+		System.out
+				.println("\nTook " + convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + " to train.");
+
+	}
+
+	private static void createMoreImagesFromThisImage(Instance trainImage, double probOfKeeping) {
+		if (!"airplanes".equals(trainImage.getLabel()) &&
+		// Airplanes all 'face' right and up, so don't flip left-to-right or
+		// top-to-bottom.
+				!"grand_piano".equals(trainImage.getLabel())) {
+			// Ditto for pianos.
+
+			if (trainImage.getProvenance() != Instance.HowCreated.FlippedLeftToRight && random() <= probOfKeeping)
+				trainSetExtras.add(trainImage.flipImageLeftToRight());
+
+			if (!"butterfly".equals(trainImage.getLabel()) &&
+			// Butterflies all have the heads at the top, so don't flip
+			// to-to-bottom.
+					!"flower".equals(trainImage.getLabel()) &&
+					// Ditto for flowers.
+					!"starfish".equals(trainImage.getLabel())) {
+				// Star fish are standardized to 'point up.
+				if (trainImage.getProvenance() != Instance.HowCreated.FlippedTopToBottom && random() <= probOfKeeping)
+					trainSetExtras.add(trainImage.flipImageTopToBottom());
+			}
+		}
+		boolean rotateImages = true;
+		if (rotateImages && trainImage.getProvenance() != Instance.HowCreated.Rotated) {
+			// Instance rotated = origTrainImage.rotateImageThisManyDegrees(3);
+			// origTrainImage.display2D(origTrainImage.getGrayImage());
+			// rotated.display2D( rotated.getGrayImage()); waitForEnter();
+
+			if (random() <= probOfKeeping)
+				trainSetExtras.add(trainImage.rotateImageThisManyDegrees(3));
+			if (random() <= probOfKeeping)
+				trainSetExtras.add(trainImage.rotateImageThisManyDegrees(-3));
+			if (random() <= probOfKeeping)
+				trainSetExtras.add(trainImage.rotateImageThisManyDegrees(4));
+			if (random() <= probOfKeeping)
+				trainSetExtras.add(trainImage.rotateImageThisManyDegrees(-4));
+			if (!"butterfly".equals(trainImage.getLabel()) &&
+			// Butterflies all have the heads at the top, so don't rotate too
+			// much.
+					!"flower".equals(trainImage.getLabel()) &&
+					// Ditto for flowers and starfish.
+					!"starfish".equals(trainImage.getLabel())) {
+				if (random() <= probOfKeeping)
+					trainSetExtras.add(trainImage.rotateImageThisManyDegrees(5));
+				if (random() <= probOfKeeping)
+					trainSetExtras.add(trainImage.rotateImageThisManyDegrees(-5));
+			} else {
+				if (random() <= probOfKeeping)
+					trainSetExtras.add(trainImage.rotateImageThisManyDegrees(2));
+				if (random() <= probOfKeeping)
+					trainSetExtras.add(trainImage.rotateImageThisManyDegrees(-2));
+			}
+		}
+		// Would be good to also shift and rotate the flipped examples, but more
+		// complex code needed.
+		if (trainImage.getProvenance() != Instance.HowCreated.Shifted) {
+			for (int shiftX = -3; shiftX <= 3; shiftX++) {
+				for (int shiftY = -3; shiftY <= 3; shiftY++) {
+					// Only keep some of these, so these don't overwhelm the
+					// flipped and rotated examples when down sampling below.
+					if ((shiftX != 0 || shiftY != 0) && random() <= probOfKeepingShiftedTrainsetImage * probOfKeeping)
+						trainSetExtras.add(trainImage.shiftImage(shiftX, shiftY));
+				}
+			}
+		}
 	}
 
 	public static void loadDataset(Dataset dataset, File dir) {
@@ -150,13 +295,14 @@ public class Lab3 {
 			try {
 				// load in all images
 				img = ImageIO.read(file);
-				// every image's name is in such format: label_image_XXXX(4 digits) though this code could handle more than
-				// 4 digits.
+				// every image's name is in such format: label_image_XXXX(4
+				// digits) though this code could handle more than 4 digits.
 				String name = file.getName();
 				int locationOfUnderscoreImage = name.indexOf("_image");
 
-				// Resize the image if requested. Any resizing allowed, but should really be one of 8x8, 16x16, 32x32, or
-				// 64x64 (original data is 128x128).
+				// Resize the image if requested. Any resizing allowed, but
+				// should really be one of 8x8, 16x16, 32x32, or 64x64 (original
+				// data is 128x128).
 				if (imageSize != 128) {
 					scaledBI = new BufferedImage(imageSize, imageSize, BufferedImage.TYPE_INT_RGB);
 					Graphics2D g = scaledBI.createGraphics();
@@ -164,16 +310,9 @@ public class Lab3 {
 					g.dispose();
 				}
 
-				Instance instance = new Instance(scaledBI == null ? img : scaledBI,
+				Instance instance = new Instance(scaledBI == null ? img : scaledBI, name,
 						name.substring(0, locationOfUnderscoreImage));
 
-				if (!FAST || (Math.random() > .80) && MAX_INSTANCES > dataset.getSize()) {
-					dataset.add(instance);
-				}
-				
-				if (dataset.getSize() > MAX_INSTANCES && FAST) {
-					return;
-				}
 			} catch (IOException e) {
 				System.err.println("Error: cannot load in the image file");
 				System.exit(1);
@@ -184,7 +323,8 @@ public class Lab3 {
 
 	private static Category convertCategoryStringToEnum(String name) {
 		if ("airplanes".equals(name))
-			// Should have been the singular 'airplane' but we'll live with this minor error.
+			// Should have been the singular 'airplane' but we'll live with this
+			// minor error.
 			return Category.airplanes;
 		if ("butterfly".equals(name))
 			return Category.butterfly;
@@ -200,7 +340,8 @@ public class Lab3 {
 	}
 
 	public static double getRandomWeight(int fanin, int fanout) {
-		// This is one 'rule of thumb' for initializing weights. Fine for perceptrons and one-layer ANN at least.
+		// This is one 'rule of thumb' for initializing weights. Fine for
+		// perceptrons and one-layer ANN at least.
 		double range = Math.max(Double.MIN_VALUE, 4.0 / Math.sqrt(6.0 * (fanin + fanout)));
 		return (2.0 * random() - 1.0) * range;
 	}
@@ -208,7 +349,8 @@ public class Lab3 {
 	// Map from 2D coordinates (in pixels) to the 1D fixed-length feature
 	// vector.
 	private static double get2DfeatureValue(Vector<Double> ex, int x, int y, int offset) {
-		// If only using GREY, then offset = 0; Else offset = 0 for RED, 1 for GREEN, 2 for BLUE, and 3 for GREY.
+		// If only using GREY, then offset = 0; Else offset = 0 for RED, 1 for
+		// GREEN, 2 for BLUE, and 3 for GREY.
 		return ex.get(unitsPerPixel * (y * imageSize + x) + offset);
 		// Jude: I have not used this, so might need debugging.
 	}
@@ -217,15 +359,22 @@ public class Lab3 {
 
 	// Return the count of TESTSET errors for the chosen model.
 	private static int trainANN(Dataset trainset, Dataset tuneset, Dataset testset) {
-		Instance sampleImage = trainset.getImages().get(0); // Assume there is at least one train image!
+		Instance sampleImage = trainset.getImages().get(0); // Assume there is
+															// at least one
+															// train image!
 		inputVectorSize = sampleImage.getWidth() * sampleImage.getHeight() * unitsPerPixel + 1;
-		// The '-1' for the bias is not explicitly added to all examples (instead code should implicitly handle it). The
+		// The '-1' for the bias is not explicitly added to all examples
+		// (instead code should implicitly handle it). The
 		// final 1 is for the CATEGORY.
 
-		// For RGB, we use FOUR input units per pixel: red, green, blue, plus grey. Otherwise we only use GREY scale.
-		// Pixel values are integers in [0,255], which we convert to a double in [0.0, 1.0]. The last item in a feature
-		// vector is the CATEGORY, encoded as a double in 0 to the size on the Category enum. We do not explicitly store
-		// the '-1' that is used for the bias. Instead code (to be written) will need to implicitly handle that
+		// For RGB, we use FOUR input units per pixel: red, green, blue, plus
+		// grey. Otherwise we only use GREY scale.
+		// Pixel values are integers in [0,255], which we convert to a double in
+		// [0.0, 1.0]. The last item in a feature
+		// vector is the CATEGORY, encoded as a double in 0 to the size on the
+		// Category enum. We do not explicitly store
+		// the '-1' that is used for the bias. Instead code (to be written) will
+		// need to implicitly handle that
 		// extra feature.
 		System.out.println("\nThe input vector size is " + comma(inputVectorSize - 1) + ".\n");
 
@@ -250,10 +399,12 @@ public class Lab3 {
 
 		System.out.println("\nTime to start learning!");
 
-		// Call your Deep ANN here. We recommend you create a separate class file for that during testing and debugging,
+		// Call your Deep ANN here. We recommend you create a separate class
+		// file for that during testing and debugging,
 		// but before submitting your code cut-and-paste that code here.
 
-		// This is optional. either comment out this line or just right a 'dummy' function.
+		// This is optional. either comment out this line or just right a
+		// 'dummy' function.
 		if ("perceptrons".equals(modelToUse))
 			return trainPerceptrons(trainFeatureVectors, tuneFeatureVectors, testFeatureVectors);
 		// This is optional.
@@ -281,9 +432,11 @@ public class Lab3 {
 			if (useRGB) {
 				int xValue = (index / unitsPerPixel) % width;
 				int yValue = (index / unitsPerPixel) / width;
-				// System.out.println(" xValue = " + xValue + " and yValue = " + yValue + " for index = " + index);
+				// System.out.println(" xValue = " + xValue + " and yValue = " +
+				// yValue + " for index = " + index);
 				if (index % 4 == 0)
-					// if unitsPerPixel > 4, this if-then-elseif needs to be edited!
+					// if unitsPerPixel > 4, this if-then-elseif needs to be
+					// edited!
 					result.add(image.getRedChannel()[xValue][yValue] / 255.0);
 				else if (index % 4 == 1)
 					result.add(image.getGreenChannel()[xValue][yValue] / 255.0);
@@ -299,7 +452,8 @@ public class Lab3 {
 			}
 		}
 		result.add((double) convertCategoryStringToEnum(image.getLabel()).ordinal());
-		// The last item is the CATEGORY, representing as an integer starting at 0 (and that int is then coerced to
+		// The last item is the CATEGORY, representing as an integer starting at
+		// 0 (and that int is then coerced to
 		// double).
 
 		return result;
@@ -340,15 +494,18 @@ public class Lab3 {
 		return truncate(millisec / 1000.0, digits) + " seconds";
 	}
 
-	public static String comma(int value) { // Always use separators (e.g., "100,000").
+	public static String comma(int value) { // Always use separators (e.g.,
+											// "100,000").
 		return String.format("%,d", value);
 	}
 
-	public static String comma(long value) { // Always use separators (e.g., "100,000").
+	public static String comma(long value) { // Always use separators (e.g.,
+												// "100,000").
 		return String.format("%,d", value);
 	}
 
-	public static String comma(double value) { // Always use separators (e.g., "100,000").
+	public static String comma(double value) { // Always use separators (e.g.,
+												// "100,000").
 		return String.format("%,f", value);
 	}
 
@@ -358,13 +515,15 @@ public class Lab3 {
 	}
 
 	/**
-	 * Format the given floating point number by truncating it to the specified number of decimal places.
+	 * Format the given floating point number by truncating it to the specified
+	 * number of decimal places.
 	 *
 	 * @param d
-	 *           A number.
+	 *            A number.
 	 * @param decimals
-	 *           How many decimal places the number should have when displayed.
-	 * @return A string containing the given number formatted to the specified number of decimal places.
+	 *            How many decimal places the number should have when displayed.
+	 * @return A string containing the given number formatted to the specified
+	 *         number of decimal places.
 	 */
 	public static String truncate(double d, int decimals) {
 		double abs = Math.abs(d);
@@ -380,18 +539,21 @@ public class Lab3 {
 	 * Randomly permute vector in place.
 	 *
 	 * @param <T>
-	 *           Type of vector to permute.
+	 *            Type of vector to permute.
 	 * @param vector
-	 *           Vector to permute in place.
+	 *            Vector to permute in place.
 	 */
 	public static <T> void permute(Vector<T> vector) {
 		if (vector != null) {
-			// NOTE from JWS (2/2/12): not sure this is an unbiased permute; I prefer (1) assigning random number to each
+			// NOTE from JWS (2/2/12): not sure this is an unbiased permute; I
+			// prefer (1) assigning random number to each
 			// element, (2) sorting, (3) removing random numbers. But also see
-			// "http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle" which justifies this.
+			// "http://en.wikipedia.org/wiki/Fisher%E2%80%93Yates_shuffle" which
+			// justifies this.
 			/*
-			 * To shuffle an array a of n elements (indices 0..n-1): for i from n - 1 downto 1 do j <- random integer with
-			 * 0 <= j <= i exchange a[j] and a[i]
+			 * To shuffle an array a of n elements (indices 0..n-1): for i from
+			 * n - 1 downto 1 do j <- random integer with 0 <= j <= i exchange
+			 * a[j] and a[i]
 			 */
 
 			for (int i = vector.size() - 1; i >= 1; i--) {
@@ -416,9 +578,10 @@ public class Lab3 {
 
 	/**
 	 * @param lower
-	 *           The lower end of the interval.
+	 *            The lower end of the interval.
 	 * @param upper
-	 *           The upper end of the interval. It is not possible for the returned random number to equal this number.
+	 *            The upper end of the interval. It is not possible for the
+	 *            returned random number to equal this number.
 	 * @return Returns a random integer in the given interval [lower, upper).
 	 */
 	public static int randomInInterval(int lower, int upper) {
@@ -427,29 +590,13 @@ public class Lab3 {
 
 	/**
 	 * @param upper
-	 *           The upper bound on the interval.
+	 *            The upper bound on the interval.
 	 * @return A random number in the interval [0, upper).
 	 * @see Utils#randomInInterval(int, int)
 	 */
 	public static int random0toNminus1(int upper) {
 		return randomInInterval(0, upper);
 	}
-
-	/////////////////////////////////////////////////////////////////////////////////////////////// Write
-	/////////////////////////////////////////////////////////////////////////////////////////////// your
-	/////////////////////////////////////////////////////////////////////////////////////////////// own
-	/////////////////////////////////////////////////////////////////////////////////////////////// code
-	/////////////////////////////////////////////////////////////////////////////////////////////// below
-	/////////////////////////////////////////////////////////////////////////////////////////////// here.
-	/////////////////////////////////////////////////////////////////////////////////////////////// Feel
-	/////////////////////////////////////////////////////////////////////////////////////////////// free
-	/////////////////////////////////////////////////////////////////////////////////////////////// to
-	/////////////////////////////////////////////////////////////////////////////////////////////// use
-	/////////////////////////////////////////////////////////////////////////////////////////////// or
-	/////////////////////////////////////////////////////////////////////////////////////////////// discard
-	/////////////////////////////////////////////////////////////////////////////////////////////// what
-	/////////////////////////////////////////////////////////////////////////////////////////////// is
-	/////////////////////////////////////////////////////////////////////////////////////////////// provided.
 
 	private static int trainPerceptrons(Vector<Vector<Double>> trainFeatureVectors,
 			Vector<Vector<Double>> tuneFeatureVectors, Vector<Vector<Double>> testFeatureVectors) {
@@ -460,32 +607,39 @@ public class Lab3 {
 
 		for (int i = 0; i < Category.values().length; i++) {
 			Vector<Double> perceptron = new Vector<Double>(inputVectorSize);
-			// Note: inputVectorSize includes the OUTPUT CATEGORY as the LAST element. That element in the perceptron will
+			// Note: inputVectorSize includes the OUTPUT CATEGORY as the LAST
+			// element. That element in the perceptron will
 			// be the BIAS.
 			perceptrons.add(perceptron);
 			for (int indexWgt = 0; indexWgt < inputVectorSize; indexWgt++)
-				perceptron.add(getRandomWeight(inputVectorSize, 1)); // Initialize weights.
+				perceptron.add(getRandomWeight(inputVectorSize, 1)); // Initialize
+																		// weights.
 		}
 
-		if (fractionOfTrainingToUse < 1.0) { // Randomize list, then get the first N of them.
+		if (fractionOfTrainingToUse < 1.0) { // Randomize list, then get the
+												// first N of them.
 			int numberToKeep = (int) (fractionOfTrainingToUse * trainFeatureVectors.size());
 			Vector<Vector<Double>> trainFeatureVectors_temp = new Vector<Vector<Double>>(numberToKeep);
 
-			permute(trainFeatureVectors); // Note: this is an IN-PLACE permute, but that is OK.
+			permute(trainFeatureVectors); // Note: this is an IN-PLACE permute,
+											// but that is OK.
 			for (int i = 0; i < numberToKeep; i++) {
 				trainFeatureVectors_temp.add(trainFeatureVectors.get(i));
 			}
 			trainFeatureVectors = trainFeatureVectors_temp;
 		}
 
-		int trainSetErrors = Integer.MAX_VALUE, tuneSetErrors = Integer.MAX_VALUE, best_tuneSetErrors = Integer.MAX_VALUE,
-				testSetErrors = Integer.MAX_VALUE, best_epoch = -1, testSetErrorsAtBestTune = Integer.MAX_VALUE;
+		int trainSetErrors = Integer.MAX_VALUE, tuneSetErrors = Integer.MAX_VALUE,
+				best_tuneSetErrors = Integer.MAX_VALUE, testSetErrors = Integer.MAX_VALUE, best_epoch = -1,
+				testSetErrorsAtBestTune = Integer.MAX_VALUE;
 		long overallStart = System.currentTimeMillis(), start = overallStart;
 
 		for (int epoch = 1; epoch <= maxEpochs /* && trainSetErrors > 0 */; epoch++) {
-			// might still want to train after trainset error = 0 since we want to get all predictions on the 'right side
+			// might still want to train after trainset error = 0 since we want
+			// to get all predictions on the 'right side
 			// of zero' (whereas errors defined wrt HIGHEST output).
-			permute(trainFeatureVectors); // Note: this is an IN-PLACE permute but that is OK.
+			permute(trainFeatureVectors); // Note: this is an IN-PLACE permute
+											// but that is OK.
 
 			// CODE NEEDED HERE!
 
@@ -499,9 +653,9 @@ public class Lab3 {
 		}
 		System.out.println(
 				"\n***** Best tuneset errors = " + comma(best_tuneSetErrors) + " of " + comma(tuneFeatureVectors.size())
-						+ " (" + truncate((100.0 * best_tuneSetErrors) / tuneFeatureVectors.size(), 2) + "%) at epoch = "
-						+ comma(best_epoch) + " (testset errors = " + comma(testSetErrorsAtBestTune) + " of "
-						+ comma(testFeatureVectors.size()) + ", "
+						+ " (" + truncate((100.0 * best_tuneSetErrors) / tuneFeatureVectors.size(), 2)
+						+ "%) at epoch = " + comma(best_epoch) + " (testset errors = " + comma(testSetErrorsAtBestTune)
+						+ " of " + comma(testFeatureVectors.size()) + ", "
 						+ truncate((100.0 * testSetErrorsAtBestTune) / testFeatureVectors.size(), 2) + "%).\n");
 		return testSetErrorsAtBestTune;
 	}
@@ -516,30 +670,20 @@ public class Lab3 {
 	//////////////////////////////////////////////////////////////////////////////////////////////// HIDDEN
 	//////////////////////////////////////////////////////////////////////////////////////////////// LAYER
 
-	private static int trainOneHU(
-			Vector<Vector<Double>> trainFeatureVectors,
-			Vector<Vector<Double>> tuneFeatureVectors,
+	private static int trainOneHU(Vector<Vector<Double>> trainFeatureVectors, Vector<Vector<Double>> tuneFeatureVectors,
 			Vector<Vector<Double>> testFeatureVectors) {
-		ConvolutionalNeuralNetwork cnn = ConvolutionalNeuralNetwork.newBuilder()
-				.setInputHeight(imageSize)
-				.setInputWidth(imageSize)
-				.setFullyConnectedDepth(1)
-				.setFullyConnectedWidth(300)
-				.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
-				.setClasses(categoryNames)
-				.setLearningRate(eta)
-				.setDropoutRate(dropoutRate)
-				.setMinEpochs(minEpochs)
-				.setMaxEpochs(maxEpochs)
+		ConvolutionalNeuralNetwork cnn = ConvolutionalNeuralNetwork.newBuilder().setInputHeight(imageSize)
+				.setInputWidth(imageSize).setFullyConnectedDepth(1).setFullyConnectedWidth(300)
+				.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID).setClasses(categoryNames)
+				.setLearningRate(eta).setDropoutRate(dropoutRate).setMinEpochs(minEpochs).setMaxEpochs(maxEpochs)
 				.build();
-		System.out.println("******\tSingle-HU CNN constructed."
-				+ " The structure is described below.\t******");
+		System.out.println("******\tSingle-HU CNN constructed." + " The structure is described below.\t******");
 		System.out.println(cnn);
-		
-		System.out.println("******\tSingle-HU CNN training has begun."
-				+ " Updates will be provided after each epoch.\t******");
+
+		System.out.println(
+				"******\tSingle-HU CNN training has begun." + " Updates will be provided after each epoch.\t******");
 		cnn.train(trainSet, tuneSet, true);
-		
+
 		System.out.println("\n******\tSingle-HU CNN testing has begun.\t******");
 		cnn.test(testSet, true, true);
 		return 0;
@@ -548,48 +692,33 @@ public class Lab3 {
 	//////////////////////////////////////////////////////////////////////////////////////////////// DEEP
 	//////////////////////////////////////////////////////////////////////////////////////////////// ANN
 	//////////////////////////////////////////////////////////////////////////////////////////////// Code
-	
-	private static int trainDeep(
-			Vector<Vector<Double>> trainFeatureVectors,
-			Vector<Vector<Double>> tuneFeatureVectors,
-			Vector<Vector<Double>> testFeatureVectors) {
-		ConvolutionalNeuralNetwork cnn = ConvolutionalNeuralNetwork.newBuilder()
-				.setInputHeight(imageSize)
-				.setInputWidth(imageSize)
-				.appendConvolutionLayer(ConvolutionLayer.newBuilder()
-						.setConvolutionSize(4, 5, 5)
-						.setNumConvolutions(20)
-						.build())
-				.appendPoolingLayer(PoolingLayer.newBuilder()
-						.setWindowSize(2, 2)
-						.setNumWindows(20)
-						.build())
-				.appendConvolutionLayer(ConvolutionLayer.newBuilder()
-						.setConvolutionSize(1, 5, 5)
-						.setNumConvolutions(20)
-						.build())
-				.appendPoolingLayer(PoolingLayer.newBuilder()
-						.setWindowSize(2, 2)
-						.setNumWindows(20)
-						.build())
-				.setFullyConnectedDepth(1) // i.e., one hidden layer.
-				.setFullyConnectedWidth(300)
-				.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
-				.setClasses(categoryNames)
-				.setMinEpochs(minEpochs)
-				.setMaxEpochs(maxEpochs)
-				.setLearningRate(eta)
-				.setDropoutRate(dropoutRate)
-				.build();
 
-		System.out.println("******\tDeep CNN constructed."
-				+ " The structure is described below.\t******");
+	private static int trainDeep(Vector<Vector<Double>> trainFeatureVectors, Vector<Vector<Double>> tuneFeatureVectors,
+			Vector<Vector<Double>> testFeatureVectors) {
+		ConvolutionalNeuralNetwork cnn = ConvolutionalNeuralNetwork.newBuilder().setInputHeight(imageSize)
+				.setInputWidth(imageSize)
+				.appendConvolutionLayer(
+						ConvolutionLayer.newBuilder().setConvolutionSize(4, 5, 5).setNumConvolutions(20).build())
+				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).setNumWindows(20).build())
+				.appendConvolutionLayer(
+						ConvolutionLayer.newBuilder().setConvolutionSize(1, 5, 5).setNumConvolutions(20).build())
+				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).setNumWindows(20).build())
+				.appendConvolutionLayer(
+						ConvolutionLayer.newBuilder().setConvolutionSize(1, 5, 5).setNumConvolutions(20).build())
+				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).setNumWindows(20).build())
+				.setFullyConnectedDepth(1) // i.e., one hidden layer.
+				.setFullyConnectedWidth(300).setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
+				.setClasses(categoryNames).setMinEpochs(minEpochs).setMaxEpochs(maxEpochs).setLearningRate(eta)
+				.setDropoutRate(dropoutRate).build();
+
+		System.out.println("******\tDeep CNN constructed." + " The structure is described below.\t******");
 		System.out.println(cnn);
 
-		System.out.println("******\tDeep CNN training has begun."
-				+ " Updates will be provided after each epoch.\t******");
+		System.out.println(
+				"******\tDeep CNN training has begun." + " Updates will be provided after each epoch.\t******");
+		System.out.println("Learning rate: " + eta);
 		cnn.train(trainSet, tuneSet, true);
-		
+
 		System.out.println("\n******\tDeep CNN testing has begun.\t******");
 		System.out.println(cnn.test(testSet, true, true) + "% accuracy");
 		return 0;
