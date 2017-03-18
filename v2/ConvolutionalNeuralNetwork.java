@@ -165,13 +165,27 @@ public class ConvolutionalNeuralNetwork {
         }
 
         if (outputConfusionMatrix) {
-            // Output the confusion matrix
-            System.out.println("Confusion Matrix for Tuning set: ");
-            for (int[] matrixRow : confusionMatrix) {
-                for (int confusionMatrixElement : matrixRow)
-                    System.out.format("%3d", confusionMatrixElement);
+            System.out.println(
+            		"\n\t------------\t\tConfusion Matrix\t\t------------\n");
+            
+            // Print the header.
+            System.out.format("%15s", ""); // Padding
+            for (String label : classes) {
+            	System.out.format("%15s", label);
+            }
+            System.out.println();
+            
+            // Print the matrix.
+            for (int i = 0; i < confusionMatrix.length; i++) {
+            	System.out.format("%15s", classes.get(i));
+            	for (int matrixElement : confusionMatrix[i]) {
+            		System.out.format("%15d", matrixElement);
+            	}
                 System.out.println();
             }
+            
+            System.out.println(
+            		"\n\t--------------------------------------------------------------------\n");
         }
 
         return accuracy;
@@ -272,7 +286,9 @@ public class ConvolutionalNeuralNetwork {
      * with the fully connected layers.
      */
     private static double[] packPlates(List<Plate> plates) {
-        checkNotEmpty(plates, "Plates to pack", false);
+    	if (!Lab3.RUNNING) {
+    		checkNotEmpty(plates, "Plates to pack", false);
+    	}
         int flattenedPlateSize = plates.get(0).getTotalNumValues();
         double[] result = new double[flattenedPlateSize * plates.size()];
         for (int i = 0; i < plates.size(); i++) {

@@ -16,9 +16,11 @@ public class Plate {
 	 * pattern of (height, width).
 	 */
 	Plate(double[][] values) {
-		checkNotNull(values, "Plate values");
-		checkPositive(values.length, "Plate height", false);
-		checkPositive(values[0].length, "Plate width", false);
+		if (!Lab3.RUNNING) {
+			checkNotNull(values, "Plate values");
+			checkPositive(values.length, "Plate height", false);
+			checkPositive(values[0].length, "Plate width", false);
+    	}
 		this.values = values;
 	}
 	
@@ -44,9 +46,11 @@ public class Plate {
 	}
 	
 	/** Returns the value at the given channel, row, and column. */
-	double valueAt(int row, int col) {
-		checkValueInRange(row, 0, getHeight(), "Row index");
-		checkValueInRange(col, 0, getWidth(), "Column index");
+	double valueAt( int row, int col) {
+		if (!Lab3.RUNNING) {
+			checkValueInRange(row, 0, getHeight(), "Row index");
+			checkValueInRange(col, 0, getWidth(), "Column index");
+    	}
 		return values[row][col];
 	}
 
@@ -56,7 +60,9 @@ public class Plate {
 	 * The returned plate has the same size as this one.
 	 */
 	Plate convolve(Plate mask, boolean[][] activeMatrix) {
-		checkValidMask(mask);
+		if (!Lab3.RUNNING) {
+			checkValidMask(mask);
+    	}
 		int maskHeight = mask.getHeight();
 		int maskWidth = mask.getWidth();
 		if (result == null) {
@@ -106,7 +112,9 @@ public class Plate {
 	
 	/** Applies the activation function to all values in the plate. */
 	void applyActivation(ActivationFunction func) {
-		checkNotNull(func, "Activation function");
+		if (!Lab3.RUNNING) {
+			checkNotNull(func, "Activation function");
+    	}
 		double[][] output = new double[getHeight()][getWidth()];
 		for (int i = 0; i < getHeight(); i++) {
 			for (int j = 0; j < getWidth(); j++) {

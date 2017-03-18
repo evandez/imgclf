@@ -85,6 +85,8 @@ public class Lab3 {
 	protected static final double probOfKeepingShiftedTrainsetImage = (shiftProbNumerator / 48.0);
 	protected static final boolean perturbPerturbedImages = false;
 	protected final static boolean createExtraTrainingExamples = false;
+	
+	protected static boolean RUNNING = true;
 
 	public static void main(String[] args) {
 		String trainDirectory = "images/trainset/";
