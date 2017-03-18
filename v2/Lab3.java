@@ -84,7 +84,7 @@ public class Lab3 {
 	// this 48 is also embedded elsewhere
 	protected static final double probOfKeepingShiftedTrainsetImage = (shiftProbNumerator / 48.0);
 	protected static final boolean perturbPerturbedImages = false;
-	protected final static boolean createExtraTrainingExamples = true;
+	protected final static boolean createExtraTrainingExamples = false;
 	
 	protected static boolean RUNNING = true;
 
