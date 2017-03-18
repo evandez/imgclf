@@ -5,6 +5,7 @@ import static v2.Util.checkNotNull;
 import static v2.Util.checkPositive;
 import static v2.Util.doubleArrayCopy2D;
 import static v2.Util.tensorAdd;
+import static v2.Util.scalarMultiply;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,11 +24,21 @@ public class ConvolutionLayer implements PlateLayer {
     private int numOutputs;
     private int outputHeight;
     private int outputWidth;
+    private final double dropoutRate;
+    private final List<boolean[][]> activeNodes;
 
-    private ConvolutionLayer(List<Plate> convolutions, int numChannels) {
+    private ConvolutionLayer(List<Plate> convolutions, int numChannels, double dropoutRate) {
         this.convolutions = convolutions;
         this.savedConvolutions = new ArrayList<>(deepCopyPlates(convolutions));
         this.numChannels = numChannels;
+        
+        // Initialize dropout fields.
+        this.dropoutRate = dropoutRate;
+        this.activeNodes = new ArrayList<>(convolutions.size());
+        for (Plate convolution : this.convolutions) {
+        	this.activeNodes.add(new boolean[convolution.getHeight()][convolution.getWidth()]);
+        }
+        resetDroppedOutNodes();
     }
 
     @Override
@@ -46,7 +57,8 @@ public class ConvolutionLayer implements PlateLayer {
     	if (numOutputs > 0) {
     		return numOutputs;
     	} else {
-    		throw new RuntimeException("Cannot call calculateNumOutputs without arguments before calling it with arguments.");
+    		throw new RuntimeException(
+    				"Cannot call calculateNumOutputs without arguments before calling it with arguments.");
     	}
     }
 
@@ -61,7 +73,8 @@ public class ConvolutionLayer implements PlateLayer {
     	if (outputHeight > 0) {
     		return outputHeight;
     	} else {
-    		throw new RuntimeException("Cannot call calculateOutputHeight without arguments before calling it with arguments.");
+    		throw new RuntimeException(
+    				"Cannot call calculateOutputHeight without arguments before calling it with arguments.");
     	}
     }
     
@@ -81,10 +94,18 @@ public class ConvolutionLayer implements PlateLayer {
     }
 
     @Override
-    public List<Plate> computeOutput(List<Plate> input) {
+    public List<Plate> computeOutput(List<Plate> input, boolean currentlyTraining) {
         checkNotNull(input, "Convolution layer input");
         checkNotEmpty(input, "Convolution layer input", false);
+        
         previousInput = deepCopyPlates(input);
+        
+        if (currentlyTraining) {
+        	determineDroppedOutNodes();
+        } else {
+        	resetDroppedOutNodes();
+        }
+        
         // Convolve each input with each mask.
         List<Plate> output = new ArrayList<>();
         Plate[] masks = new Plate[numChannels];
@@ -94,9 +115,17 @@ public class ConvolutionLayer implements PlateLayer {
             double[][] values = new double[input.get(0).getHeight() - maskHeight + 1][input.get(0).getWidth() - maskWidth + 1];
             // convolve each input image, sum the output, add the new plate
             for (int j = 0; j < numChannels; j++) {
-                masks[j] = convolutions.get(i + j);
-                Util.tensorAdd(values, input.get(j).convolve(masks[j]).getValues(), true);
-                input.get(j);
+                if (currentlyTraining) {
+                	// Downscale weights according to proportion of dropped out node.
+                	masks[j] = new Plate(scalarMultiply(
+                			1 - dropoutRate,
+                			convolutions.get(i + j).getValues(),
+                			false));
+                } else {
+                	masks[j] = convolutions.get(i + j);
+                }
+                
+                tensorAdd(values, input.get(j).convolve(masks[j], activeNodes.get(i + j)).getValues(), true);
             }
             output.add((new Plate(values).applyActivation(ActivationFunction.RELU)));
         }
@@ -118,8 +147,11 @@ public class ConvolutionLayer implements PlateLayer {
                     double[][] update = new double[convolutions.get(i).getHeight()][convolutions.get(i).getWidth()];
                     for (int l = 0; l < convolutions.get(i).getHeight(); l++) {
                         for (int m = 0; l < convolutions.get(i).getHeight(); l++) {
-                            if (update[l][m] == 0)
+                            if (!activeNodes.get(i)[l][m]) {
+                            	continue;
+                            } else if (update[l][m] == 0) {
                                 update[l][m] = 1;
+                            }
                             update[l][m] = previousInput.get(i).valueAt(j+l, k+m)
                                     * errors.get(i).valueAt(j+l, k+m)
                                     * learningRate;
@@ -148,8 +180,14 @@ public class ConvolutionLayer implements PlateLayer {
                     for (int col = 0; col <= delta[i][row].length - convolutions.get(i).getWidth(); col++) {
                         for (int kernelRow = 0; kernelRow < convolutions.get(i).getHeight(); kernelRow++) {
                             for (int kernelCol = 0; kernelCol < convolutions.get(i).getWidth(); kernelCol++) {
-                                delta[i][row + kernelRow][col + kernelCol] += errors.get(i).valueAt(row, col)
-                                        * convolutions.get(i).rot180().valueAt(kernelRow, kernelCol);
+                            	if (!activeNodes.get(i)[convolutions.get(i).getHeight() - kernelRow - 1]
+                            						   [convolutions.get(i).getWidth() - kernelCol - 1]) {
+                            		continue;
+                            	}
+                            	
+                            	delta[i][row + kernelRow][col + kernelCol] +=
+                            			errors.get(i).valueAt(row, col) 
+                            					* convolutions.get(i).rot180().valueAt(kernelRow, kernelCol);
                             }
                         }
                     }
@@ -162,7 +200,6 @@ public class ConvolutionLayer implements PlateLayer {
                 }
 
                 deltaOutput.add(new Plate(delta[i]));
-//                System.out.println(deltaOutput.get(deltaOutput.size() - 1).toString());
             }
             return deltaOutput;
         } else {
@@ -180,6 +217,30 @@ public class ConvolutionLayer implements PlateLayer {
     public void restoreState() {
     	convolutions.clear();
     	convolutions.addAll(savedConvolutions);
+    }
+    
+    private void determineDroppedOutNodes() {
+    	resetDroppedOutNodes();
+    	for (boolean[][] activeMatrix : activeNodes) {
+    		for (int i = 0; i < activeMatrix.length; i++) {
+    			for (int j = 0; j < activeMatrix[i].length; j++) {
+    				if (dropoutRate > Util.RNG.nextDouble()) {
+    					// The node "drops out."
+    					activeMatrix[i][j] = false;
+    				}
+    			}
+    		}
+    	}
+    }
+    
+    private void resetDroppedOutNodes() {
+    	for (boolean[][] activeMatrix : activeNodes) {
+    		for (int i = 0; i < activeMatrix.length; i++) {
+    			for (int j = 0; j < activeMatrix.length; j++) {
+    				activeMatrix[i][j] = true;
+    			}
+    		}
+    	}
     }
 
     private static List<Plate> deepCopyPlates(List<Plate> plates) {
@@ -203,6 +264,7 @@ public class ConvolutionLayer implements PlateLayer {
                         convolutions.get(0).getWidth()) +
                 String.format("Number of convolutions: %d\n", convolutions.size()) +
                 "Activation Function: RELU\n" +
+                String.format("Dropout rate: %.2f\n", dropoutRate) +
                 "\n\t------------\t\n";
     }
 
@@ -221,6 +283,7 @@ public class ConvolutionLayer implements PlateLayer {
         private int convolutionHeight = 0;
         private int convolutionWidth = 0;
         private int numConvolutions = 0;
+        private double dropoutRate = 0;
 
         private Builder() {
         }
@@ -240,12 +303,23 @@ public class ConvolutionLayer implements PlateLayer {
             this.numConvolutions = numConvolutions;
             return this;
         }
+        
+        Builder setDropoutRate(double dropoutRate) {
+        	if (dropoutRate < 0 || dropoutRate > 1) {
+        		throw new IllegalArgumentException(
+        				String.format("Dropout rate of %.2f is not valid.\n", dropoutRate));
+        	}
+        	this.dropoutRate = dropoutRate;
+        	return this;
+        }
 
         ConvolutionLayer build() {
             checkPositive(numChannels, "Convolution channels", true);
             checkPositive(convolutionHeight, "Convolution height", true);
             checkPositive(convolutionWidth, "Convolution width", true);
             checkPositive(numConvolutions, "Number of convolutions", true);
+            // No check for dropout rate; just default to 0.
+
             List<Plate> convolutions = new ArrayList<>();
             for (int i = 0; i < numConvolutions; i++) {
                 for (int j = 0; j < numChannels; j++) {
@@ -254,7 +328,7 @@ public class ConvolutionLayer implements PlateLayer {
                                     createRandomConvolution(convolutionHeight, convolutionWidth)));
                 }
             }
-            return new ConvolutionLayer(convolutions, numChannels);
+            return new ConvolutionLayer(convolutions, numChannels, dropoutRate);
         }
 
         private static double[][] createRandomConvolution(int height, int width) {

@@ -39,7 +39,7 @@ public class Plate {
 	}
 	
 	/** Returns the value at the given channel, row, and column. */
-	double valueAt( int row, int col) {
+	double valueAt(int row, int col) {
 		checkValueInRange(row, 0, getHeight(), "Row index");
 		checkValueInRange(col, 0, getWidth(), "Column index");
 		return values[row][col];
@@ -50,27 +50,28 @@ public class Plate {
 	 * 
 	 * The returned plate has the same size as this one.
 	 */
-	Plate convolve(Plate mask) {
+	Plate convolve(Plate mask, boolean[][] activeMatrix) {
 		checkValidMask(mask);
 		int maskHeight = mask.getHeight();
 		int maskWidth = mask.getWidth();
 		double[][] result = new double[getHeight() - maskHeight + 1][getWidth() - maskWidth + 1];
 		for (int i = 0; i < result.length; i++) {
 			for (int j = 0; j < result[i].length; j++) {
-				result[i][j] = convolvePixelIJ(mask, i + maskHeight / 2, j + maskWidth / 2);
+				result[i][j] = convolvePixelIJ(mask, activeMatrix, i + maskHeight / 2, j + maskWidth / 2);
 			}
 		}
 		return new Plate(result);
 	}
 	
-	private double convolvePixelIJ(Plate mask, int i, int j) {
+	private double convolvePixelIJ(Plate mask, boolean[][] activeMatrix, int i, int j) {
 		double sum = 0.0;
 		for (int k = 0; k < mask.getHeight(); k++) {
 			for (int l = 0; l < mask.getWidth(); l++) {
 				int neighborX = i - (mask.getHeight() / 2) + k;
 				int neighborY = j - (mask.getWidth() / 2) + l;
 				if (neighborX < 0 || neighborX >= getHeight() 
-						|| neighborY < 0 || neighborY >= getWidth()) {
+						|| neighborY < 0 || neighborY >= getWidth()
+						|| !activeMatrix[k][l]) {
 					continue;
 				}
 				sum += mask.values[k][l] * values[neighborX][neighborY];

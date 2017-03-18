@@ -65,7 +65,7 @@ public class Lab3 {
 	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
-	private static double eta = 0.01, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
+	private static double eta = 0.001, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
 	private static int minEpochs = 50;
@@ -528,7 +528,7 @@ public class Lab3 {
 				.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
 				.setClasses(categoryNames)
 				.setLearningRate(eta)
-				.setDropoutRate(dropoutRate)
+				.setFullyConnectedDropoutRate(dropoutRate)
 				.setMinEpochs(minEpochs)
 				.setMaxEpochs(maxEpochs)
 				.build();
@@ -559,18 +559,22 @@ public class Lab3 {
 				.appendConvolutionLayer(ConvolutionLayer.newBuilder()
 						.setConvolutionSize(4, 5, 5)
 						.setNumConvolutions(20)
+						.setDropoutRate(dropoutRate)
 						.build())
 				.appendPoolingLayer(PoolingLayer.newBuilder()
 						.setWindowSize(2, 2)
 						.setNumWindows(20)
+						.setDropoutRate(dropoutRate)
 						.build())
 				.appendConvolutionLayer(ConvolutionLayer.newBuilder()
 						.setConvolutionSize(1, 5, 5)
 						.setNumConvolutions(20)
+						.setDropoutRate(dropoutRate)
 						.build())
 				.appendPoolingLayer(PoolingLayer.newBuilder()
 						.setWindowSize(2, 2)
 						.setNumWindows(20)
+						.setDropoutRate(dropoutRate)
 						.build())
 				.setFullyConnectedDepth(1) // i.e., one hidden layer.
 				.setFullyConnectedWidth(300)
@@ -579,7 +583,7 @@ public class Lab3 {
 				.setMinEpochs(minEpochs)
 				.setMaxEpochs(maxEpochs)
 				.setLearningRate(eta)
-				.setDropoutRate(dropoutRate)
+				.setFullyConnectedDropoutRate(dropoutRate)
 				.build();
 
 		System.out.println("******\tDeep CNN constructed."

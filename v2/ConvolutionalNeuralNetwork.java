@@ -181,7 +181,7 @@ public class ConvolutionalNeuralNetwork {
         // Pass the input through the plate layers first.
         List<Plate> plates = Arrays.asList(instanceToPlate(img));
         for (PlateLayer layer : plateLayers) {
-            plates = layer.computeOutput(plates);
+            plates = layer.computeOutput(plates, currentlyTraining);
         }
 
         // Then pass the output through the fully connected layers.
@@ -308,7 +308,7 @@ public class ConvolutionalNeuralNetwork {
         private int minEpochs = 0;
         private int maxEpochs = 0;
         private double learningRate = 0;
-        private double dropoutRate = 0;
+        private double fcDropoutRate = 0;
         private boolean useRGB = true;
 
         private Builder() {}
@@ -356,6 +356,15 @@ public class ConvolutionalNeuralNetwork {
             this.fcActivation = fcActivation;
             return this;
         }
+        
+        Builder setFullyConnectedDropoutRate(double fcDropoutRate) {
+        	if (fcDropoutRate < 0 || fcDropoutRate > 1) {
+        		throw new IllegalArgumentException(
+        				String.format("Invalid dropout rate of %.2f\n", fcDropoutRate));
+        	}
+        	this.fcDropoutRate = fcDropoutRate;
+        	return this;
+        }
 
         Builder setClasses(List<String> classes) {
             checkNotNull(classes, "Classes");
@@ -380,15 +389,6 @@ public class ConvolutionalNeuralNetwork {
             checkPositive(learningRate, "Learning rate", false);
             this.learningRate = learningRate;
             return this;
-        }
-        
-        Builder setDropoutRate(double dropoutRate) {
-        	if (dropoutRate < 0 || dropoutRate > 1) {
-        		throw new IllegalArgumentException(
-        				String.format("Invalid dropout rate of %.2f\n", dropoutRate));
-        	}
-        	this.dropoutRate = dropoutRate;
-        	return this;
         }
 
         public Builder setUseRGB(boolean useRGB) {
@@ -432,7 +432,7 @@ public class ConvolutionalNeuralNetwork {
             		: numInputs;
             fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
                     .setActivationFunction(fcActivation)
-                    .setDropoutRate(dropoutRate)
+                    .setDropoutRate(fcDropoutRate)
                     .setNumInputs(numInputs)
                     .setNumNodes(fullyConnectedWidth)
                     .build());
@@ -441,7 +441,7 @@ public class ConvolutionalNeuralNetwork {
             for (int i = 0; i < fullyConnectedDepth - 1; i++) {
                 fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
                         .setActivationFunction(fcActivation)
-                        .setDropoutRate(dropoutRate)
+                        .setDropoutRate(fcDropoutRate)
                         .setNumInputs(fullyConnectedWidth)
                         .setNumNodes(fullyConnectedWidth)
                         .build());

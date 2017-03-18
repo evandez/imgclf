@@ -15,18 +15,25 @@ public class PoolingLayer implements PlateLayer {
     private final int windowHeight;
     private final int windowWidth;
     // quite similar to a plate, except its booleans so more memory efficient
-    private ArrayList<boolean[][]> maximumOfWindow;
+    private List<boolean[][]> maximumOfWindow;
     private int numOutputs;
     private int outputHeight;
     private int outputWidth;
-
-    private PoolingLayer(int numWindows, int windowHeight, int windowWidth) {
+    private final double dropoutRate;
+    private final boolean[][] activeNodes;
+    
+    private PoolingLayer(int numWindows, int windowHeight, int windowWidth, double dropoutRate) {
     	maximumOfWindow = new ArrayList<>(numWindows);
     	for (int i = 0; i < numWindows; i++) {
     		maximumOfWindow.add(null);
     	}
         this.windowHeight = windowHeight;
         this.windowWidth = windowWidth;
+        
+        // Initialize dropout data.
+        this.dropoutRate = dropoutRate;
+        this.activeNodes = new boolean[windowHeight][windowWidth];
+        resetDroppedOutNodes();
     }
 
     @Override
@@ -87,12 +94,18 @@ public class PoolingLayer implements PlateLayer {
 
 
     @Override
-    public List<Plate> computeOutput(List<Plate> input) {
+    public List<Plate> computeOutput(List<Plate> input, boolean currentlyTraining) {
         if (maximumOfWindow.get(0) == null) {
             maximumOfWindow = new ArrayList<>();
             for (Plate anInput : input) {
                 maximumOfWindow.add(new boolean[anInput.getHeight()][anInput.getWidth()]);
             }
+        }
+        
+        if (currentlyTraining) {
+        	determineDroppedOutNodes();
+        } else {
+        	resetDroppedOutNodes();
         }
 
         List<Plate> output = new ArrayList<>(input.size());
@@ -165,6 +178,11 @@ public class PoolingLayer implements PlateLayer {
         int maxJ = -1;
         for (int i = windowStartI; i <= windowEndI; i++) {
             for (int j = windowStartJ; j <= windowEndJ; j++) {
+            	if (!activeNodes[i - windowStartI][j - windowStartJ]) {
+            		// Don't consider dropped out nodes in the pool.
+            		continue;
+            	}
+
                 double value = plate.getValues()[i][j];
                 if (value > max) {
                     max = value;
@@ -173,8 +191,32 @@ public class PoolingLayer implements PlateLayer {
                 }
             }
         }
+        
         maximumOfPlate[maxI][maxJ] = true;
         return max;
+    }
+    
+    private void determineDroppedOutNodes() {
+    	resetDroppedOutNodes();
+    	int dropoutCount = 0;
+    	int maxDropouts = windowHeight * windowWidth / 2;
+    	for (int i = 0; i < activeNodes.length; i++) {
+    		for (int j = 0; j < activeNodes[i].length; j++) {
+    			if (dropoutRate > Util.RNG.nextDouble() && dropoutCount < maxDropouts) {
+    				// The node drops out.
+    				activeNodes[i][j] = false;
+    				dropoutCount++;
+    			}
+    		}
+    	}
+    }
+    
+    private void resetDroppedOutNodes() {
+    	for (int i = 0; i < activeNodes.length; i++) {
+    		for (int j = 0; j < activeNodes[i].length; j++) {
+    			activeNodes[i][j] = true;
+    		}
+    	}
     }
 
     @Override
@@ -182,6 +224,7 @@ public class PoolingLayer implements PlateLayer {
         return  "\n------\tPooling Layer\t------\n\n" +
                 String.format("Window height: %d\n", windowHeight) +
                 String.format("Window width: %d\n", windowWidth) +
+                String.format("Dropout rate: %.2f\n", dropoutRate) +
                 "\n\t------------\t\n";
     }
 
@@ -198,9 +241,9 @@ public class PoolingLayer implements PlateLayer {
         private int windowHeight = 0;
         private int windowWidth = 0;
         private int numWindows = 0;
+        private double dropoutRate = 0;
         
-        private Builder() {
-        }
+        private Builder() {}
 
         Builder setWindowSize(int height, int width) {
             checkPositive(height, "Window height", false);
@@ -211,14 +254,25 @@ public class PoolingLayer implements PlateLayer {
         }
         
         Builder setNumWindows(int numWindows) {
+        	checkPositive(numWindows, "Number of windows", false);
         	this.numWindows = numWindows;
         	return this;
         }
 
+        Builder setDropoutRate(double dropoutRate) {
+        	if (dropoutRate < 0 || dropoutRate > 1) {
+        		throw new IllegalArgumentException(
+        				String.format("Invalid dropout rate of %.2f.\n", dropoutRate));
+        	}
+        	this.dropoutRate = dropoutRate;
+        	return this;
+        }
+        
         PoolingLayer build() {
             checkPositive(windowHeight, "Window height", true);
             checkPositive(windowWidth, "Window width", true);
-            return new PoolingLayer(numWindows, windowHeight, windowWidth);
+            checkPositive(numWindows, "Number of windows", true);
+            return new PoolingLayer(numWindows, windowHeight, windowWidth, dropoutRate);
         }
     }
 }

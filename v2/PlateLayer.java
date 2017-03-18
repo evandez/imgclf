@@ -24,17 +24,17 @@ public interface PlateLayer {
 	int calculateOutputWidth();
 	
 	/** Pass the given plates through this layer. */
-	List<Plate> computeOutput(List<Plate> input);
-
-	/** Saves the current state of the layer (weights, etc.) */
-	void saveState();
-
-	/** Restores the last saved state of the layer. */
-	void restoreState();
+	List<Plate> computeOutput(List<Plate> input, boolean currentlyTraining);
 
 	/** 
 	 * Propagate errors (deltas stored in plates) through this layer,
 	 * and return the deltas for the next layer.
 	 */
 	List<Plate> propagateError(List<Plate> errors, double learningRate);
+	
+	/** Saves the current state of the layer (weights, etc.) */
+	void saveState();
+
+	/** Restores the last saved state of the layer. */
+	void restoreState();
 }
