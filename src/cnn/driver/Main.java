@@ -1,30 +1,28 @@
-package v1;
-/**
- * @Author: Yuting Liu and Jude Shavlik.
- *
- * Copyright 2017.  Free for educational and basic-research use.
- *
- * The main class for Lab3 of cs638/838.
- *
- * Reads in the image files and stores BufferedImage's for every example.  Converts to fixed-length
- * feature vectors (of doubles).  Can use RGB (plus grey-scale) or use grey scale.
- *
- * You might want to debug and experiment with your Deep ANN code using a separate class, but when you turn in Lab3.java, insert that class here to simplify grading.
- *
- * Some snippets from Jude's code left in here - feel free to use or discard.
- *
- */
+package cnn.driver;
 
+import cnn.ConvolutionalNeuralNetwork;
+import cnn.components.ConvolutionLayer;
+import cnn.components.PoolingLayer;
+import cnn.tools.ActivationFunction;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.Vector;
-
 import javax.imageio.ImageIO;
 
-public class Lab3 {
+/**
+ * Reads in the image files and stores BufferedImage's for every example.  Converts to fixed-length
+ * feature vectors (of doubles).  Can use RGB (plus grey-scale) or use grey scale.
+ *
+ * Copyright 2017.  Free for educational and basic-research use.
+ *
+ * @author: Yuting Liu and Jude Shavlik.
+ */
+public final class Main {
 
 	// Images are imageSize x imageSize. The provided data is 128x128, but this can be resized by setting this value (or
 	// passing in an argument). You might want to resize to 8x8, 16x16, 32x32, or 64x64; this can reduce your network
@@ -38,6 +36,14 @@ public class Lab3 {
 
 	public static int NUM_CATEGORIES = Category.values().length;
 
+	// Store the categories as strings.
+	public static List<String> categoryNames = new ArrayList<>();
+	static {
+		for (Category cat : Category.values()) {
+			categoryNames.add(cat.toString());
+		}
+	}
+	
 	// If true, FOUR units are used per pixel: red, green, blue, and grey.
 	// If false, only ONE (the grey-scale value).
 	private static final Boolean useRGB = true;
@@ -55,9 +61,10 @@ public class Lab3 {
 	public static int inputVectorSize;
 
 	// To turn off drop out, set dropoutRate to 0.0 (or a neg number).
-	private static double eta = 0.1, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
+	private static double eta = 0.01, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
+	private static int minEpochs = 50;
 	private static int maxEpochs = 2000;
 	
 	private static int MAX_INSTANCES = 30;
@@ -70,15 +77,23 @@ public class Lab3 {
 		String tuneDirectory = "images/tuneset/";
 		String testDirectory = "images/testset/";
 
-		if (args.length != 3) {
-			System.err.println("Usage error: java Lab3 <train_set_folder_path> "
-                    + "<tune_set_folder_path> <test_set_foler_path>");
+		if (args.length > 5) {
+			System.err.println(
+					"Usage error: java Main <train_set_folder_path> <tune_set_folder_path> <test_set_foler_path> <imageSize>");
 			System.exit(1);
 		}
-
-        trainDirectory = args[0];
-        tuneDirectory = args[1];
-        testDirectory = args[2];
+		if (args.length >= 1) {
+			trainDirectory = args[0];
+		}
+		if (args.length >= 2) {
+			tuneDirectory = args[1];
+		}
+		if (args.length >= 3) {
+			testDirectory = args[2];
+		}
+		if (args.length >= 4) {
+			imageSize = Integer.parseInt(args[3]);
+		}
 
 		// Here are statements with the absolute path to open images folder
 		File trainsetDir = new File(trainDirectory);
@@ -180,7 +195,7 @@ public class Lab3 {
 		throw new Error("Unknown category: " + name);
 	}
 
-	private static double getRandomWeight(int fanin, int fanout) {
+	public static double getRandomWeight(int fanin, int fanout) {
 		// This is one 'rule of thumb' for initializing weights. Fine for perceptrons and one-layer ANN at least.
 		double range = Math.max(Double.MIN_VALUE, 4.0 / Math.sqrt(6.0 * (fanin + fanout)));
 		return (2.0 * random() - 1.0) * range;
@@ -188,7 +203,7 @@ public class Lab3 {
 
 	// Map from 2D coordinates (in pixels) to the 1D fixed-length feature
 	// vector.
-	private static double get2DfeatureValue(Vector<Double> ex, int x, int y, int offset) {
+	public static double get2DfeatureValue(Vector<Double> ex, int x, int y, int offset) {
 		// If only using GREY, then offset = 0; Else offset = 0 for RED, 1 for GREEN, 2 for BLUE, and 3 for GREY.
 		return ex.get(unitsPerPixel * (y * imageSize + x) + offset);
 		// Jude: I have not used this, so might need debugging.
@@ -210,9 +225,9 @@ public class Lab3 {
 		// extra feature.
 		System.out.println("\nThe input vector size is " + comma(inputVectorSize - 1) + ".\n");
 
-		Vector<Vector<Double>> trainFeatureVectors = new Vector<>(trainset.getSize());
-		Vector<Vector<Double>> tuneFeatureVectors = new Vector<>(tuneset.getSize());
-		Vector<Vector<Double>> testFeatureVectors = new Vector<>(testset.getSize());
+		Vector<Vector<Double>> trainFeatureVectors = new Vector<Vector<Double>>(trainset.getSize());
+		Vector<Vector<Double>> tuneFeatureVectors = new Vector<Vector<Double>>(tuneset.getSize());
+		Vector<Vector<Double>> testFeatureVectors = new Vector<Vector<Double>>(testset.getSize());
 
 		long start = System.currentTimeMillis();
 		fillFeatureVectors(trainFeatureVectors, trainset);
@@ -410,7 +425,7 @@ public class Lab3 {
 	 * @param upper
 	 *           The upper bound on the interval.
 	 * @return A random number in the interval [0, upper).
-	 * @see randomInInterval(int, int)
+	 * @see Utils#randomInInterval(int, int)
 	 */
 	public static int random0toNminus1(int upper) {
 		return randomInInterval(0, upper);
@@ -497,117 +512,79 @@ public class Lab3 {
 	//////////////////////////////////////////////////////////////////////////////////////////////// HIDDEN
 	//////////////////////////////////////////////////////////////////////////////////////////////// LAYER
 
-	private static boolean debugOneLayer = false; // If set true, more things
-	// checked and/or printed
-	// (which does slow down the
-	// code).
-	private static int NUM_HIDDEN = 250;
-
-	private static final double LEARNING_RATE = .0005;
-	private static final double MOMENTUM_RATE = 0.75;
-	private static final double REGULARIZATION_RATE = 0.00001;
-
-	private static int trainOneHU(Vector<Vector<Double>> trainFeatureVectors, Vector<Vector<Double>> tuneFeatureVectors,
+	private static int trainOneHU(
+			Vector<Vector<Double>> trainFeatureVectors,
+			Vector<Vector<Double>> tuneFeatureVectors,
 			Vector<Vector<Double>> testFeatureVectors) {
-		long overallStart = System.currentTimeMillis(), start = overallStart;
-		int trainSetErrors = Integer.MAX_VALUE, tuneSetErrors = Integer.MAX_VALUE, best_tuneSetErrors = Integer.MAX_VALUE,
-				testSetErrors = Integer.MAX_VALUE, best_epoch = -1, testSetErrorsAtBestTune = Integer.MAX_VALUE;
-
-		NeuralNetwork nn = new NeuralNetwork(inputVectorSize - 1, NUM_HIDDEN, Category.values().length);
-		NeuralNetwork.setParameters(LEARNING_RATE, MOMENTUM_RATE, REGULARIZATION_RATE);
-		System.out.println(nn.accuracy(testFeatureVectors, false) + " " + nn.accuracy(trainFeatureVectors, false));
-		for (int epoch = 1; epoch <= maxEpochs /* && trainSetErrors > 0 */; epoch++) {
-			// might still want to train after trainset error =0 since we want to get all predictions on the 'right side of
-			// zero' (whereas errors defined wrt HIGHEST output).
-			permute(trainFeatureVectors); // Note: this is an IN-PLACE permute but that is OK.
-
-			for (int i = 0; i < trainFeatureVectors.size(); i++) {
-				nn.updateWeights(trainFeatureVectors.get(i));
-			}
-
-			// CODE NEEDED HERE!
-//			System.out.println("Done with Epoch # " + comma(epoch) + ".  Took "
-//					+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + " ("
-//					+ convertMillisecondsToTimeSpan(System.currentTimeMillis() - overallStart) + " overall).");
-//			reportOneLayerConfig(); // Print out some info after epoch, so you can see what experiment is running in a
-//											// given console.
-			System.out.println(nn.accuracy(testFeatureVectors, false) + " " + nn.accuracy(trainFeatureVectors, false));
-			start = System.currentTimeMillis();
-		}
-
-//		System.out.println(
-//				"\n***** Best tuneset errors = " + comma(best_tuneSetErrors) + " of " + comma(tuneFeatureVectors.size())
-//						+ " (" + truncate((100.0 * best_tuneSetErrors) / tuneFeatureVectors.size(), 2) + "%) at epoch = "
-//						+ comma(best_epoch) + " (testset errors = " + comma(testSetErrorsAtBestTune) + " of "
-//						+ comma(testFeatureVectors.size()) + ", "
-//						+ truncate((100.0 * testSetErrorsAtBestTune) / testFeatureVectors.size(), 2) + "%).\n");
-		return testSetErrorsAtBestTune;
+		ConvolutionalNeuralNetwork cnn = ConvolutionalNeuralNetwork.newBuilder()
+				.setInputHeight(imageSize)
+				.setInputWidth(imageSize)
+				.setFullyConnectedDepth(1)
+				.setFullyConnectedWidth(300)
+				.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
+				.setClasses(categoryNames)
+				.setLearningRate(eta)
+				.setMinEpochs(minEpochs)
+				.setMaxEpochs(maxEpochs)
+				.build();
+		System.out.println("******\tSingle-HU CNN constructed."
+				+ " The structure is described below.\t******");
+		System.out.println(cnn);
+		
+		System.out.println("******\tSingle-HU CNN training has begun."
+				+ " Updates will be provided after each epoch.\t******");
+		cnn.train(trainSet, tuneSet, true);
+		
+		System.out.println("\n******\tSingle-HU CNN testing has begun.\t******");
+		cnn.test(testSet, true);		
+		return 0;
 	}
-
-	private static void reportOneLayerConfig() {
-		System.out.println("***** ONE-LAYER: UseRGB = " + useRGB + ", imageSize = " + imageSize + "x" + imageSize
-				+ ", fraction of training examples used = " + truncate(fractionOfTrainingToUse, 2) + ", eta = "
-				+ truncate(eta, 2) + ", dropout rate = " + truncate(dropoutRate, 2) + ", number HUs = " + NUM_HIDDEN
-		// + ", activationFunctionForHUs = " + activationFunctionForHUs + ",
-		// activationFunctionForOutputs = " + activationFunctionForOutputs
-		// + ", # forward props = " + comma(forwardPropCounter)
-		);
-		// for (Category cat : Category.values()) { // Report the output unit
-		// biases.
-		// int catIndex = cat.ordinal();
-		//
-		// System.out.print(" bias(" + cat + ") = " +
-		// truncate(weightsToOutputUnits[numberOfHiddenUnits][catIndex], 6));
-		// } System.out.println();
-	}
-
-	// private static long forwardPropCounter = 0; // Count the number of
-	// forward propagations performed.
 
 	//////////////////////////////////////////////////////////////////////////////////////////////// DEEP
 	//////////////////////////////////////////////////////////////////////////////////////////////// ANN
 	//////////////////////////////////////////////////////////////////////////////////////////////// Code
 	
-	private static final int NUM_PLATES = 20;
-	private static final int NUM_HIDDEN_DEEP = 250;
-	
-	private static int trainDeep(Vector<Vector<Double>> trainFeatureVectors, Vector<Vector<Double>> tuneFeatureVectors,
+	private static int trainDeep(
+			Vector<Vector<Double>> trainFeatureVectors,
+			Vector<Vector<Double>> tuneFeatureVectors,
 			Vector<Vector<Double>> testFeatureVectors) {
-		// You need to implement this method!
-//		String[] config = new String[] {
-//				"inpu ",
-//				"conv 5",
-//				"pool 2",
-//				"conv 5",
-//				"pool 2",
-//				"conv 3",
-//				"hidd " + NUM_HIDDEN_DEEP,
-//				"outp "
-//		};
-		String[] config = new String[] {
-				"inpu ",
-				"hidd " + NUM_HIDDEN_DEEP,
-				"outp "
-		};
-		DeepNeuralNetwork dnn = new DeepNeuralNetwork(config, NUM_PLATES, imageSize, unitsPerPixel, NUM_CATEGORIES);
-		dnn.setInput(trainSet.getImages().get(0));
-		dnn.computeOutput();
-		OutputLayer out = (OutputLayer) dnn.layers[dnn.layers.length - 1];
-		for (int i = 0; i < out.nodes.size(); i++) {
-			System.out.println(out.nodes.get(i).getOutput());
-		}
-		return -1;
-	}
-	
-	public static final double INITIAL_WEIGHT = 0.001;
-	// Gets weights randomly
-	public static void randomizeWeights(double[][] weights) {
-		Random r = new Random();
-		for (int i = 0; i < weights.length; i++) {
-			for (int j = 0; j < weights[i].length; j++) {
-				weights[i][j] = r.nextDouble() * INITIAL_WEIGHT;
-			}
-		}
+		ConvolutionalNeuralNetwork cnn = ConvolutionalNeuralNetwork.newBuilder()
+				.setInputHeight(imageSize)
+				.setInputWidth(imageSize)
+				.appendConvolutionLayer(ConvolutionLayer.newBuilder()
+						.setConvolutionSize(4, 5, 5)
+						.setNumConvolutions(20)
+						.build())
+				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).build())
+				.appendConvolutionLayer(ConvolutionLayer.newBuilder()
+						.setConvolutionSize(1, 5, 5)
+						.setNumConvolutions(20)
+						.build())
+				.appendPoolingLayer(PoolingLayer.newBuilder().setWindowSize(2, 2).build())
+				.appendConvolutionLayer(ConvolutionLayer.newBuilder()
+						.setConvolutionSize(1, 3, 3)
+						.setNumConvolutions(20)
+						.build())
+				.setFullyConnectedDepth(1) // i.e., one hidden layer.
+				.setFullyConnectedWidth(300)
+				.setFullyConnectedActivationFunction(ActivationFunction.RELU)
+				.setClasses(categoryNames)
+				.setMinEpochs(minEpochs)
+				.setMaxEpochs(maxEpochs)
+				.setLearningRate(eta)
+				.build();
+
+		System.out.println("******\tDeep CNN constructed."
+				+ " The structure is described below.\t******");
+		System.out.println(cnn);
+
+		System.out.println("******\tDeep CNN training has begun."
+				+ " Updates will be provided after each epoch.\t******");
+		cnn.train(trainSet, tuneSet, true);
+		
+		System.out.println("\n******\tDeep CNN testing has begun.\t******");
+		System.out.println(cnn.test(testSet, true) + "% accuracy");
+		return 0;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////

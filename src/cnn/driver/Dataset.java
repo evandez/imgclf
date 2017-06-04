@@ -1,20 +1,18 @@
-package v1;
-
-/**
- * @Author: Yuting Liu
- * This is the dataset class that holds in the whole dataset
- * 
- */
+package cnn.driver;
 
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * This is the dataset class that holds in the whole dataset
+ * @author: Yuting Liu
+ */
 public class Dataset {
 	// the list of all instances
 	private ArrayList<Instance> instances;
 
 	public Dataset() {
-		this.instances = new ArrayList<Instance>();
+		this.instances = new ArrayList<>();
 	}
 
 	// get the size of the dataset

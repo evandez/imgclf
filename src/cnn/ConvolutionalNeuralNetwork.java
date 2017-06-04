@@ -1,14 +1,23 @@
-package v2;
+package cnn;
 
-import static v2.Util.checkNotEmpty;
-import static v2.Util.checkNotNull;
-import static v2.Util.checkPositive;
-import static v2.Util.tensorSubtract;
+import static cnn.tools.Util.checkNotEmpty;
+import static cnn.tools.Util.checkNotNull;
+import static cnn.tools.Util.checkPositive;
+import static cnn.tools.Util.tensorSubtract;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import cnn.components.ConvolutionLayer;
+import cnn.components.FullyConnectedLayer;
+import cnn.components.Plate;
+import cnn.components.PlateLayer;
+import cnn.components.PoolingLayer;
+import cnn.driver.Dataset;
+import cnn.driver.Instance;
+import cnn.tools.ActivationFunction;
 
 /**
  * A convolutional neural network that supports arbitrary convolutional and pooling layers,

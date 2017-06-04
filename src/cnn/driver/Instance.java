@@ -1,31 +1,30 @@
-package v1;
-/**
- * 
- * This is the class for each image instance
- */
+package cnn.driver;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 
+/** 
+ * This is the class for each image instance.
+ * @author Yuting Liu
+ */
 public class Instance {
-	// store the bufferedImage
+	// Store the bufferedImage.
 	private BufferedImage image;
 	private String label;
 	private int width, height;
-	// separate rgb channels
+	
+	// Separate rgb channels.
 	private int[][] red_channel, green_channel, blue_channel, gray_image;
 
-	// Constructor
-	// given the bufferedimage and its class label
-	// get the
+	/** Constructs the Instance from a BufferedImage. */
 	public Instance(BufferedImage image, String label) {
 		this.image = image;
 		this.label = label;
 		width = image.getWidth();
 		height = image.getHeight();
 
-		// get separate rgb channels
+		// Get separate rgb channels.
 		red_channel = new int[height][width];
 		green_channel = new int[height][width];
 		blue_channel = new int[height][width];
@@ -40,23 +39,44 @@ public class Instance {
 			}
 		}
 	}
+	
+	/** Construct the Instance from a 3D array. */
+	public Instance(int[][][] image, String label) {
+		this.label = label;
+		height = image[0].length;
+		width = image[0][0].length;
+		
+		red_channel = image[0];
+		green_channel = image[1];
+		blue_channel = image[2];
+		if (image.length == 4) {
+			gray_image = image[3];
+		} else {
+			gray_image = new int[height][width];
+			for (int i = 0; i < height; i++) {
+				for (int j = 0; j < width; j++) {
+					gray_image[i][j] = (image[0][i][j] + image[1][i][j] + image[2][i][j]) / 3;
+				}
+			}
+		}
+	}
 
-	// get separate red channel image
+	/** Gets separate red channel image. */
 	public int[][] getRedChannel() {
 		return red_channel;
 	}
 
-	// get separate green channel image
+	/** Gets separate green channel image. */
 	public int[][] getGreenChannel() {
 		return green_channel;
 	}
 
-	// get separate blue channel image
+	/** Gets separate blue channel image. */
 	public int[][] getBlueChannel() {
 		return blue_channel;
 	}
 
-	// get the gray scale image
+	/** Gets the gray scale image. */
 	public int[][] getGrayImage() {
 		// Gray filter
 		BufferedImage grayImage = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
@@ -70,14 +90,17 @@ public class Instance {
 		return gray_image;
 	}
 
+	/** Gets the image width. */
 	public int getWidth() {
 		return width;
 	}
 
+	/** Gets the image height. */
 	public int getHeight() {
 		return height;
 	}
 
+	/** Gets the image label. */
 	public String getLabel() {
 		return label;
 	}
